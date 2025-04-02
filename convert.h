@@ -32,11 +32,13 @@ FP_INT CR_FP1(C_R int_cr);
 FP_INT CR_FP2(C_R int_cr);
 FP_INT CR_FP3(C_R int_cr);
 FP_INT CR_FP4(C_R int_cr);
+FP_INT CR_FP5(C_R int_cr);
 
 FP_INT IS_FP1(INF_SUP int_is);
 FP_INT IS_FP2(INF_SUP int_is);
 FP_INT IS_FP3(INF_SUP int_is);
 FP_INT IS_FP4(INF_SUP int_is);
+FP_INT IS_FP5(INF_SUP int_is);
 
 C_R FP_CR(FP_INT c_tilde);
 

@@ -26,29 +26,27 @@ int main(int argc, char **argv)
     FP_INT *res2 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *res3 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *res4 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *res5 = malloc(2 * N * sizeof(FP_INT));
 
     C_R *res11 = malloc(2 * N * sizeof(C_R));
     C_R *res22 = malloc(2 * N * sizeof(C_R));
     C_R *res33 = malloc(2 * N * sizeof(C_R));
     C_R *res44 = malloc(2 * N * sizeof(C_R));
+    C_R *res55 = malloc(2 * N * sizeof(C_R));
 
     FP_INT *res111 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *res222 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *res333 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *res444 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *res555 = malloc(2 * N * sizeof(FP_INT));
 
     C_R *res1111 = malloc(2 * N * sizeof(C_R));
     C_R *res2222 = malloc(2 * N * sizeof(C_R));
     C_R *res3333 = malloc(2 * N * sizeof(C_R));
     C_R *res4444 = malloc(2 * N * sizeof(C_R));
+    C_R *res5555 = malloc(2 * N * sizeof(C_R));
 
-    if (!test_int || !res1 || !res2 || !res3 || !res4 || !res11 || !res22 || !res33 || !res44) 
-    {
-        perror("malloc failed!\n");
-        return 1;
-    }
-
-    const double r_ratio_min = 1e-20;
+    const double r_ratio_min = 1e-30;
     const double r_ratio_max = 1e-3;
 
     for (int i = 0; i < N; i ++) 
@@ -108,17 +106,9 @@ int main(int argc, char **argv)
     double start5 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res11[i] = FP_CR(res1[i]);
+        res5[i] = CR_FP5(test_int[i]);
     }
     double end5 = get_time_ms();
-
-
-    for (int i = 0; i < 2 * N; i ++)
-    {
-        res22[i] = FP_CR(res2[i]);
-        res33[i] = FP_CR(res3[i]);
-        res44[i] = FP_CR(res4[i]);
-    }
   
     double start111 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
@@ -148,22 +138,37 @@ int main(int argc, char **argv)
     }
     double end444 = get_time_ms();
 
+    double start555 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
+        res555[i] = IS_FP5(test_int2[i]);
+    }
+    double end555 = get_time_ms();
+
+    double start0 = get_time_ms();
+    for (int i = 0; i < 2 * N; i ++)
+    {
+        res11[i] = FP_CR(res1[i]);
+        res22[i] = FP_CR(res2[i]);
+        res33[i] = FP_CR(res3[i]);
+        res44[i] = FP_CR(res4[i]);
+        res55[i] = FP_CR(res5[i]);
         res1111[i] = FP_CR(res111[i]);
         res2222[i] = FP_CR(res222[i]);
         res3333[i] = FP_CR(res333[i]);
         res4444[i] = FP_CR(res444[i]);
+        res5555[i] = FP_CR(res555[i]);
     }
+    double end0 = get_time_ms();
 
     FILE *fp = fopen("convert_time.txt", "a"); 
     if (!fp) {
         perror("Failed to open convert_time.txt");
         return 1;
     }
-    fprintf(fp, "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t(ms)\n", 
-        end1 - start1, end2 - start2, end3 - start3, end4 - start4, end5 - start5, 
-        end111 - start111, end222 - start222, end333 - start333, end444 - start444); 
+    fprintf(fp, "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t(ms)\n", 
+        end1 - start1, end2 - start2, end3 - start3, end4 - start4, 0.1 * (end0 - start0), 
+        end111 - start111, end222 - start222, end333 - start333, end444 - start444, end5 - start5, end555 - start555); 
     fclose(fp);  
 
     FILE *fp2 = fopen("CR_FPINT_res.txt", "a");
@@ -174,16 +179,12 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < 2 * N; i ++)
     {
-        fprintf(fp2, "test_c[%d] = %lf\t", i, test_int[i].center);
-        fprintf(fp2, "test_r[%d] = %lf\n", i, test_int[i].radius);
-        fprintf(fp2, "res1[%d] = %lf\t", i, res1[i]);
-        fprintf(fp2, "res1_r[%d] = %lf\n", i, res11[i].radius);
-        fprintf(fp2, "res2[%d] = %lf\t", i, res2[i]);
-        fprintf(fp2, "res2_r[%d] = %lf\n", i, res22[i].radius);
-        fprintf(fp2, "res3[%d] = %lf\t", i, res3[i]);
-        fprintf(fp2, "res3_r[%d] = %lf\n", i, res33[i].radius);
-        fprintf(fp2, "res4[%d] = %lf\t", i, res4[i]);
-        fprintf(fp2, "res4_r[%d] = %lf\n", i, res44[i].radius);
+        fprintf(fp2, "test_interval[%d] = [%lf,\t%lf]\n", i, test_int[i].center - test_int[i].radius, test_int[i].center + test_int[i].radius);
+        fprintf(fp2, "res1[%d] = [%lf,\t%lf]\n", i, res1[i] - res11[i].radius, res1[i] + res11[i].radius);
+        fprintf(fp2, "res2[%d] = [%lf,\t%lf]\n", i, res2[i] - res22[i].radius, res2[i] + res22[i].radius);
+        fprintf(fp2, "res3[%d] = [%lf,\t%lf]\n", i, res3[i] - res33[i].radius, res3[i] + res33[i].radius);
+        fprintf(fp2, "res4[%d] = [%lf,\t%lf]\n", i, res4[i] - res44[i].radius, res4[i] + res44[i].radius);
+        fprintf(fp2, "res5[%d] = [%lf,\t%lf]\n", i, res5[i] - res55[i].radius, res5[i] + res55[i].radius);
         for (int j = 51; j >= 0; j --)
         {
             int b0 = read_m_bit(test_int[i].center, j);
@@ -213,7 +214,13 @@ int main(int argc, char **argv)
             int b4 = read_m_bit(res4[i], j);
             fprintf(fp2, "%d", b4);
         }
-        fprintf(fp2, "\n");       
+        fprintf(fp2, "\n");     
+        for (int j = 51; j >= 0; j --)
+        {
+            int b5 = read_m_bit(res5[i], j);
+            fprintf(fp2, "%d", b5);
+        }
+        fprintf(fp2, "\n");  
     }
     fclose(fp2);
 
@@ -225,17 +232,12 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < 2 * N; i ++)
     {
-        fprintf(fp3, "test_inf[%d] = %lf\t", i, test_int2[i].inf);
-        fprintf(fp3, "test_sup[%d] = %lf\n", i, test_int2[i].sup);
-        fprintf(fp3, "res1_inf[%d] = %lf\t", i, res111[i] - res1111[i].radius);
-        fprintf(fp3, "res1_sup[%d] = %lf\n", i, res111[i] + res1111[i].radius);
-        fprintf(fp3, "res2_inf[%d] = %lf\t", i, res222[i] - res2222[i].radius);
-        fprintf(fp3, "res2_sup[%d] = %lf\n", i, res222[i] + res2222[i].radius);
-        fprintf(fp3, "res3_inf[%d] = %lf\t", i, res333[i] - res3333[i].radius);
-        fprintf(fp3, "res3_sup[%d] = %lf\n", i, res333[i] + res3333[i].radius);
-        fprintf(fp3, "res4_inf[%d] = %lf\t", i, res444[i] - res4444[i].radius);
-        fprintf(fp3, "res4_sup[%d] = %lf\n", i, res444[i] + res4444[i].radius);
-        fprintf(fp3, "\n");
+        fprintf(fp3, "test_interval[%d] = [%lf,\t%lf]\n", i, test_int2[i].inf, test_int2[i].sup);
+        fprintf(fp3, "res1[%d] = [%lf,\t%lf]\n", i, res111[i] - res1111[i].radius, res111[i] + res1111[i].radius);
+        fprintf(fp3, "res2[%d] = [%lf,\t%lf]\n", i, res222[i] - res2222[i].radius, res222[i] + res2222[i].radius);
+        fprintf(fp3, "res3[%d] = [%lf,\t%lf]\n", i, res333[i] - res3333[i].radius, res333[i] + res3333[i].radius);
+        fprintf(fp3, "res4[%d] = [%lf,\t%lf]\n", i, res444[i] - res4444[i].radius, res444[i] + res4444[i].radius);
+        fprintf(fp3, "res5[%d] = [%lf,\t%lf]\n", i, res555[i] - res5555[i].radius, res555[i] + res5555[i].radius);
         for (int j = 51; j >= 0; j --)
         {
             int b1 = read_m_bit(res111[i], j);
@@ -259,27 +261,41 @@ int main(int argc, char **argv)
             int b4 = read_m_bit(res444[i], j);
             fprintf(fp3, "%d", b4);
         }
-        fprintf(fp3, "\n");       
+        fprintf(fp3, "\n");   
+        for (int j = 51; j >= 0; j --)
+        {
+            int b5 = read_m_bit(res555[i], j);
+            fprintf(fp3, "%d", b5);
+        }
+        fprintf(fp3, "\n");    
     }
     fclose(fp3);
 
     free(test_int);
+
     free(res1);
     free(res2);
     free(res3);
     free(res4);
+    free(res5);
+
     free(res11);
     free(res22);
     free(res33);
     free(res44);
+    free(res55);
+
     free(res111);
     free(res222);
     free(res333);
     free(res444);
+    free(res555);
+
     free(res1111);
     free(res2222);
     free(res3333);
     free(res4444);
+    free(res5555);
 
     return 0;
 }

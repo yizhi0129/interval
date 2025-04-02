@@ -75,8 +75,9 @@ FP_INT CR_FP1(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("1 Error: No enough precision to convert!\n");
-            printf("c = %lf, r = %lf\n", int_cr.center, int_cr.radius);
+            printf("1 Error: No enough precision to convert!\t");
+            printf("c = %lf, r = %lf,\t", int_cr.center, int_cr.radius);
+            printf("e_c = %d, e_r = %d\n", e_c, e_r);
             return 1;
         }
         int index = DOUBLE_E - p;
@@ -113,8 +114,9 @@ FP_INT CR_FP2(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("2 Error: No enough precision to convert!\n");
-            printf("c = %lf, r = %lf\n", c, r);
+            printf("2 Error: No enough precision to convert!\t");
+            printf("c = %lf, r = %lf,\t", c, r);
+            printf("e_c = %d, e_r = %d\n", e_c, e_r);
             return 1;
         }
         int index = DOUBLE_E - p;
@@ -159,8 +161,9 @@ FP_INT CR_FP3(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("3 Error: No enough precision to convert!\n");
-            printf("c = %lf, r = %lf\n", c, r);
+            printf("3 Error: No enough precision to convert!\t");
+            printf("c = %lf, r = %lf,\t", c, r);
+            printf("e_c = %d, e_r = %d\n", e_c, e_r);
             return 1;
         }
         int index = DOUBLE_E - p;
@@ -197,13 +200,13 @@ FP_INT CR_FP4(C_R int_cr)
     int p = int_min(e_c - e_r - 1, DOUBLE_E);
     FP_INT c_tilde = int_cr.center;
     double r_tilde = 0.0;
-    bool cond = true;
-    while (cond)
+    while (true)
     {
         if (p < 1)
         {
-            printf("4 Error: No enough precision to convert!\n");
-            printf("c = %lf, r = %lf\n", c, r);
+            printf("4 Error: No enough precision to convert!\t");
+            printf("c = %lf, r = %lf,\t", c, r);
+            printf("e_c = %d, e_r = %d\n", e_c, e_r);
             return 1;
         }
         int index = DOUBLE_E - p;
@@ -214,7 +217,45 @@ FP_INT CR_FP4(C_R int_cr)
         int b = read_m_bit(c, index);
         if ((2*b-1) * c + r <= (2*b-1) * c_tilde + r_tilde) 
         {
-            cond = false;
+            break;
+        }
+        else
+        {
+            p --;
+        }
+    } 
+    return c_tilde;
+}
+
+FP_INT CR_FP5(C_R int_cr)
+{
+    double c = int_cr.center;
+    double r = int_cr.radius;
+    int e_c, e_r;
+    frexp(c, &e_c);
+    frexp(r, &e_r); 
+    e_c -= 1;
+    e_r -= 1;
+    int p = int_min(e_c - e_r - 1, DOUBLE_E);
+    FP_INT c_tilde = int_cr.center;
+    double r_tilde = 0.0;
+    while (true)
+    {
+        if (p < 1)
+        {
+            printf("5 Error: No enough precision to convert!\t");
+            printf("c = %lf, r = %lf,\t", c, r);
+            printf("e_c = %d, e_r = %d\n", e_c, e_r);
+            return 1;
+        }
+        int index = DOUBLE_E - p;
+        c_tilde = truncate_m(c, index);
+        c_tilde = set_m_bit(c_tilde, index, 1);
+        r_tilde = set_pow2(e_c - p);
+
+        int b = read_m_bit(c, index);
+        if ((2*b-1) * c + r <= (2*b-1) * c_tilde + r_tilde) 
+        {
             break;
         }
         else
@@ -272,6 +313,18 @@ FP_INT IS_FP4(INF_SUP int_is)
     int_cr.radius = int_cr.center - x;
     fesetround(FE_TONEAREST);
     return CR_FP4(int_cr);
+}
+
+FP_INT IS_FP5(INF_SUP int_is)
+{
+    double x = int_is.inf;
+    double y = int_is.sup;
+    C_R int_cr;
+    fesetround(FE_UPWARD);
+    int_cr.center = x + 0.5 * (y - x);
+    int_cr.radius = int_cr.center - x;
+    fesetround(FE_TONEAREST);
+    return CR_FP5(int_cr);
 }
 
 C_R FP_CR(FP_INT c_tilde)
