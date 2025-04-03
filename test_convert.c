@@ -17,59 +17,63 @@ double get_time_ms()
 
 int main(int argc, char **argv)
 {
-    srand((unsigned int)time(NULL));
-
     C_R *test_int = malloc(2 * N * sizeof(C_R));
     INF_SUP *test_int2 = malloc(2 * N * sizeof(INF_SUP));
 
-    FP_INT *res1 = malloc(2 * N * sizeof(FP_INT));
-    FP_INT *res2 = malloc(2 * N * sizeof(FP_INT));
-    FP_INT *res3 = malloc(2 * N * sizeof(FP_INT));
-    FP_INT *res4 = malloc(2 * N * sizeof(FP_INT));
-    FP_INT *res5 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *CR_c1 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *CR_c2 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *CR_c3 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *CR_c4 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *CR_c5 = malloc(2 * N * sizeof(FP_INT));
 
-    C_R *res11 = malloc(2 * N * sizeof(C_R));
-    C_R *res22 = malloc(2 * N * sizeof(C_R));
-    C_R *res33 = malloc(2 * N * sizeof(C_R));
-    C_R *res44 = malloc(2 * N * sizeof(C_R));
-    C_R *res55 = malloc(2 * N * sizeof(C_R));
+    C_R *CR_cr1 = malloc(2 * N * sizeof(C_R));
+    C_R *CR_cr2 = malloc(2 * N * sizeof(C_R));
+    C_R *CR_cr3 = malloc(2 * N * sizeof(C_R));
+    C_R *CR_cr4 = malloc(2 * N * sizeof(C_R));
+    C_R *CR_cr5 = malloc(2 * N * sizeof(C_R));
 
-    FP_INT *res111 = malloc(2 * N * sizeof(FP_INT));
-    FP_INT *res222 = malloc(2 * N * sizeof(FP_INT));
-    FP_INT *res333 = malloc(2 * N * sizeof(FP_INT));
-    FP_INT *res444 = malloc(2 * N * sizeof(FP_INT));
-    FP_INT *res555 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *IS_c1 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *IS_c2 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *IS_c3 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *IS_c4 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *IS_c5 = malloc(2 * N * sizeof(FP_INT));
 
-    C_R *res1111 = malloc(2 * N * sizeof(C_R));
-    C_R *res2222 = malloc(2 * N * sizeof(C_R));
-    C_R *res3333 = malloc(2 * N * sizeof(C_R));
-    C_R *res4444 = malloc(2 * N * sizeof(C_R));
-    C_R *res5555 = malloc(2 * N * sizeof(C_R));
+    C_R *IS_cr1 = malloc(2 * N * sizeof(C_R));
+    C_R *IS_cr2 = malloc(2 * N * sizeof(C_R));
+    C_R *IS_cr3 = malloc(2 * N * sizeof(C_R));
+    C_R *IS_cr4 = malloc(2 * N * sizeof(C_R));
+    C_R *IS_cr5 = malloc(2 * N * sizeof(C_R));
 
-    const double r_ratio_min = 1e-30;
-    const double r_ratio_max = 1e-3;
+    const double c_exp_min = -6.0;
+    const double c_exp_max = 9.0;
+    const double r_exp_min = -15.0;
+    const double r_exp_max = -3.0;
+
+    srand(get_time_ms());    
 
     for (int i = 0; i < N; i ++) 
     {
-        double c1 = ((double)rand() / RAND_MAX) * 1e5  * (2 * i + 1);   
-        double r_ratio1 = (rand() % 10 != 0) ? r_ratio_min + ((double)rand() / RAND_MAX) * (r_ratio_max - r_ratio_min) : 1e-10;
-        double r1 = r_ratio1 * fabs(c1);    
+        double c_power1 = c_exp_min + ((double)rand() / RAND_MAX) * (c_exp_max - c_exp_min);
+        double c1 = ((double)rand() / RAND_MAX) * pow(10, c_power1);   
+        double r_power1 = r_exp_min + ((double)rand() / RAND_MAX) * (r_exp_max - r_exp_min);
+        double r1 = pow(10, r_power1) * fabs(c1);    
         test_int[i].center = c1;
         test_int[i].radius = r1;
 
-        double c2 =  - ((double)rand() / RAND_MAX) * 1e5  * (2 * i + 1);   
-        double r_ratio2 = (rand() % 10 != 0) ? r_ratio_min + ((double)rand() / RAND_MAX) * (r_ratio_max - r_ratio_min) : 1e-10;
-        double r2 = r_ratio2 * fabs(c2);     
+        double c_power2 = c_exp_min + ((double)rand() / RAND_MAX) * (c_exp_max - c_exp_min);
+        double c2 =  - ((double)rand() / RAND_MAX) * pow(10, c_power2);   
+        double r_power2 = r_exp_min + ((double)rand() / RAND_MAX) * (r_exp_max - r_exp_min);
+        double r2 = pow(10, r_power2) * fabs(c2);     
         test_int[i + N].center = c2;
         test_int[i + N].radius = r2;
 
-        double inf1 = ((double)rand() / RAND_MAX) * 1e5  * (2 * i + 1);
-        double sup1 = inf1 + 2 * r1;
+        double inf1 = (0.5 * (double)rand() / RAND_MAX + 0.8) * c1;
+        double sup1 = inf1 + (1 + 2 * (double)rand() / RAND_MAX) * r1;
         test_int2[i].inf = inf1;
         test_int2[i].sup = sup1;
 
-        double sup2 = - ((double)rand() / RAND_MAX) * 1e5  * (2 * i + 1);
-        double inf2 = sup2 - 2 * r2;
+        double sup2 = (0.5 * (double)rand() / RAND_MAX + 0.8) * c2;
+        double inf2 = sup2 - (1 + 2 * (double)rand() / RAND_MAX) * r2;
         test_int2[i + N].inf = inf2;    
         test_int2[i + N].sup = sup2;
     }
@@ -78,86 +82,86 @@ int main(int argc, char **argv)
     double start1 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res1[i] = CR_FP1(test_int[i]);
+        CR_c1[i] = CR_FP1(test_int[i]);
     }
     double end1 = get_time_ms();
 
     double start2 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res2[i] = CR_FP2(test_int[i]);
+        CR_c2[i] = CR_FP2(test_int[i]);
     }
     double end2 = get_time_ms();
 
     double start3 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res3[i] = CR_FP3(test_int[i]);
+        CR_c3[i] = CR_FP3(test_int[i]);
     }
     double end3 = get_time_ms();
 
     double start4 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res4[i] = CR_FP4(test_int[i]);
+        CR_c4[i] = CR_FP4(test_int[i]);
     }
     double end4 = get_time_ms();
 
     double start5 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res5[i] = CR_FP5(test_int[i]);
+        CR_c5[i] = CR_FP5(test_int[i]);
     }
     double end5 = get_time_ms();
   
     double start111 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res111[i] = IS_FP1(test_int2[i]);
+        IS_c1[i] = IS_FP1(test_int2[i]);
     }
     double end111 = get_time_ms();
 
     double start222 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res222[i] = IS_FP2(test_int2[i]);
+        IS_c2[i] = IS_FP2(test_int2[i]);
     }
     double end222 = get_time_ms();
 
     double start333 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res333[i] = IS_FP3(test_int2[i]);
+        IS_c3[i] = IS_FP3(test_int2[i]);
     }
     double end333 = get_time_ms();
 
     double start444 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res444[i] = IS_FP4(test_int2[i]);
+        IS_c4[i] = IS_FP4(test_int2[i]);
     }
     double end444 = get_time_ms();
 
     double start555 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res555[i] = IS_FP5(test_int2[i]);
+        IS_c5[i] = IS_FP5(test_int2[i]);
     }
     double end555 = get_time_ms();
 
     double start0 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
-        res11[i] = FP_CR(res1[i]);
-        res22[i] = FP_CR(res2[i]);
-        res33[i] = FP_CR(res3[i]);
-        res44[i] = FP_CR(res4[i]);
-        res55[i] = FP_CR(res5[i]);
-        res1111[i] = FP_CR(res111[i]);
-        res2222[i] = FP_CR(res222[i]);
-        res3333[i] = FP_CR(res333[i]);
-        res4444[i] = FP_CR(res444[i]);
-        res5555[i] = FP_CR(res555[i]);
+        CR_cr1[i] = FP_CR(CR_c1[i]);
+        CR_cr2[i] = FP_CR(CR_c2[i]);
+        CR_cr3[i] = FP_CR(CR_c3[i]);
+        CR_cr4[i] = FP_CR(CR_c4[i]);
+        CR_cr5[i] = FP_CR(CR_c5[i]);
+        IS_cr1[i] = FP_CR(IS_c1[i]);
+        IS_cr2[i] = FP_CR(IS_c2[i]);
+        IS_cr3[i] = FP_CR(IS_c3[i]);
+        IS_cr4[i] = FP_CR(IS_c4[i]);
+        IS_cr5[i] = FP_CR(IS_c5[i]);
     }
     double end0 = get_time_ms();
 
@@ -179,12 +183,57 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < 2 * N; i ++)
     {
-        fprintf(fp2, "test_interval[%d] = [%lf,\t%lf]\n", i, test_int[i].center - test_int[i].radius, test_int[i].center + test_int[i].radius);
-        fprintf(fp2, "res1[%d] = [%lf,\t%lf]\n", i, res1[i] - res11[i].radius, res1[i] + res11[i].radius);
-        fprintf(fp2, "res2[%d] = [%lf,\t%lf]\n", i, res2[i] - res22[i].radius, res2[i] + res22[i].radius);
-        fprintf(fp2, "res3[%d] = [%lf,\t%lf]\n", i, res3[i] - res33[i].radius, res3[i] + res33[i].radius);
-        fprintf(fp2, "res4[%d] = [%lf,\t%lf]\n", i, res4[i] - res44[i].radius, res4[i] + res44[i].radius);
-        fprintf(fp2, "res5[%d] = [%lf,\t%lf]\n", i, res5[i] - res55[i].radius, res5[i] + res55[i].radius);
+        fprintf(fp2, "test_interval[%d] = [%.15f,\t%.15f]\n", i, test_int[i].center - test_int[i].radius, test_int[i].center + test_int[i].radius);
+        fprintf(fp2, "CR_c1 = [%.15f,\t%.15f]\t", CR_c1[i] - CR_cr1[i].radius, CR_c1[i] + CR_cr1[i].radius);
+        if (CR_c1[i] - CR_cr1[i].radius <= test_int[i].center - test_int[i].radius && 
+            CR_c1[i] + CR_cr1[i].radius >= test_int[i].center + test_int[i].radius)
+        {
+            fprintf(fp2, "OK\n");
+        }
+        else
+        {
+            fprintf(fp2, "Error\n");
+        }
+        fprintf(fp2, "CR_c2 = [%.15f,\t%.15f]\t", CR_c2[i] - CR_cr2[i].radius, CR_c2[i] + CR_cr2[i].radius);
+        if (CR_c2[i] - CR_cr2[i].radius <= test_int[i].center - test_int[i].radius && 
+            CR_c2[i] + CR_cr2[i].radius >= test_int[i].center + test_int[i].radius)
+        {
+            fprintf(fp2, "OK\n");
+        }
+        else
+        {
+            fprintf(fp2, "Error\n");
+        }
+        fprintf(fp2, "CR_c3 = [%.15f,\t%.15f]\t", CR_c3[i] - CR_cr3[i].radius, CR_c3[i] + CR_cr3[i].radius);
+        if (CR_c3[i] - CR_cr3[i].radius <= test_int[i].center - test_int[i].radius && 
+            CR_c3[i] + CR_cr3[i].radius >= test_int[i].center + test_int[i].radius)
+        {
+            fprintf(fp2, "OK\n");
+        }
+        else
+        {
+            fprintf(fp2, "Error\n");
+        }
+        fprintf(fp2, "CR_c4 = [%.15f,\t%.15f]\t", CR_c4[i] - CR_cr4[i].radius, CR_c4[i] + CR_cr4[i].radius);
+        if (CR_c4[i] - CR_cr4[i].radius <= test_int[i].center - test_int[i].radius && 
+            CR_c4[i] + CR_cr4[i].radius >= test_int[i].center + test_int[i].radius)
+        {
+            fprintf(fp2, "OK\n");
+        }
+        else
+        {
+            fprintf(fp2, "Error\n");
+        }
+        fprintf(fp2, "CR_c5 = [%.15f,\t%.15f]\t", CR_c5[i] - CR_cr5[i].radius, CR_c5[i] + CR_cr5[i].radius);
+        if (CR_c5[i] - CR_cr5[i].radius <= test_int[i].center - test_int[i].radius && 
+            CR_c5[i] + CR_cr5[i].radius >= test_int[i].center + test_int[i].radius)
+        {
+            fprintf(fp2, "OK\n");
+        }
+        else
+        {
+            fprintf(fp2, "Error\n");
+        }
         for (int j = 51; j >= 0; j --)
         {
             int b0 = read_m_bit(test_int[i].center, j);
@@ -193,31 +242,31 @@ int main(int argc, char **argv)
         fprintf(fp2, "\n");
         for (int j = 51; j >= 0; j --)
         {
-            int b1 = read_m_bit(res1[i], j);
+            int b1 = read_m_bit(CR_c1[i], j);
             fprintf(fp2, "%d", b1);
         }
         fprintf(fp2, "\n");
         for (int j = 51; j >= 0; j --)
         {
-            int b2 = read_m_bit(res2[i], j);
+            int b2 = read_m_bit(CR_c2[i], j);
             fprintf(fp2, "%d", b2);
         }
         fprintf(fp2, "\n");
         for (int j = 51; j >= 0; j --)
         {
-            int b3 = read_m_bit(res3[i], j);
+            int b3 = read_m_bit(CR_c3[i], j);
             fprintf(fp2, "%d", b3);
         }
         fprintf(fp2, "\n");
         for (int j = 51; j >= 0; j --)
         {
-            int b4 = read_m_bit(res4[i], j);
+            int b4 = read_m_bit(CR_c4[i], j);
             fprintf(fp2, "%d", b4);
         }
         fprintf(fp2, "\n");     
         for (int j = 51; j >= 0; j --)
         {
-            int b5 = read_m_bit(res5[i], j);
+            int b5 = read_m_bit(CR_c5[i], j);
             fprintf(fp2, "%d", b5);
         }
         fprintf(fp2, "\n");  
@@ -232,39 +281,84 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < 2 * N; i ++)
     {
-        fprintf(fp3, "test_interval[%d] = [%lf,\t%lf]\n", i, test_int2[i].inf, test_int2[i].sup);
-        fprintf(fp3, "res1[%d] = [%lf,\t%lf]\n", i, res111[i] - res1111[i].radius, res111[i] + res1111[i].radius);
-        fprintf(fp3, "res2[%d] = [%lf,\t%lf]\n", i, res222[i] - res2222[i].radius, res222[i] + res2222[i].radius);
-        fprintf(fp3, "res3[%d] = [%lf,\t%lf]\n", i, res333[i] - res3333[i].radius, res333[i] + res3333[i].radius);
-        fprintf(fp3, "res4[%d] = [%lf,\t%lf]\n", i, res444[i] - res4444[i].radius, res444[i] + res4444[i].radius);
-        fprintf(fp3, "res5[%d] = [%lf,\t%lf]\n", i, res555[i] - res5555[i].radius, res555[i] + res5555[i].radius);
+        fprintf(fp3, "test_interval[%d] = [%.15f,\t%.15f]\n", i, test_int2[i].inf, test_int2[i].sup);
+        fprintf(fp3, "IS_c1 = [%.15f,\t%.15f]\t", IS_c1[i] - IS_cr1[i].radius, IS_c1[i] + IS_cr1[i].radius);
+        if (IS_c1[i] - IS_cr1[i].radius <= test_int2[i].inf && 
+            IS_c1[i] + IS_cr1[i].radius >= test_int2[i].sup)
+        {
+            fprintf(fp3, "OK\n");
+        }
+        else
+        {
+            fprintf(fp3, "Error\n");
+        }
+        fprintf(fp3, "IS_c2 = [%.15f,\t%.15f]\t", IS_c2[i] - IS_cr2[i].radius, IS_c2[i] + IS_cr2[i].radius);
+        if (IS_c2[i] - IS_cr2[i].radius <= test_int2[i].inf && 
+            IS_c2[i] + IS_cr2[i].radius >= test_int2[i].sup)
+        {
+            fprintf(fp3, "OK\n");
+        }
+        else
+        {
+            fprintf(fp3, "Error\n");
+        }
+        fprintf(fp3, "IS_c3 = [%.15f,\t%.15f]\t", IS_c3[i] - IS_cr3[i].radius, IS_c3[i] + IS_cr3[i].radius);
+        if (IS_c3[i] - IS_cr3[i].radius <= test_int2[i].inf && 
+            IS_c3[i] + IS_cr3[i].radius >= test_int2[i].sup)
+        {
+            fprintf(fp3, "OK\n");
+        }
+        else
+        {
+            fprintf(fp3, "Error\n");
+        }
+        fprintf(fp3, "IS_c4 = [%.15f,\t%.15f]\t", IS_c4[i] - IS_cr4[i].radius, IS_c4[i] + IS_cr4[i].radius);
+        if (IS_c4[i] - IS_cr4[i].radius <= test_int2[i].inf && 
+            IS_c4[i] + IS_cr4[i].radius >= test_int2[i].sup)
+        {
+            fprintf(fp3, "OK\n");
+        }
+        else
+        {
+            fprintf(fp3, "Error\n");
+        }
+        fprintf(fp3, "IS_c5 = [%.15f,\t%.15f]\t", IS_c5[i] - IS_cr5[i].radius, IS_c5[i] + IS_cr5[i].radius);
+        if (IS_c5[i] - IS_cr5[i].radius <= test_int2[i].inf && 
+            IS_c5[i] + IS_cr5[i].radius >= test_int2[i].sup)
+        {
+            fprintf(fp3, "OK\n");
+        }
+        else
+        {
+            fprintf(fp3, "Error\n");
+        }
         for (int j = 51; j >= 0; j --)
         {
-            int b1 = read_m_bit(res111[i], j);
+            int b1 = read_m_bit(IS_c1[i], j);
             fprintf(fp3, "%d", b1);
         }
         fprintf(fp3, "\n");
         for (int j = 51; j >= 0; j --)
         {
-            int b2 = read_m_bit(res222[i], j);
+            int b2 = read_m_bit(IS_c2[i], j);
             fprintf(fp3, "%d", b2);
         }
         fprintf(fp3, "\n");
         for (int j = 51; j >= 0; j --)
         {
-            int b3 = read_m_bit(res333[i], j);
+            int b3 = read_m_bit(IS_c3[i], j);
             fprintf(fp3, "%d", b3);
         }
         fprintf(fp3, "\n");
         for (int j = 51; j >= 0; j --)
         {
-            int b4 = read_m_bit(res444[i], j);
+            int b4 = read_m_bit(IS_c4[i], j);
             fprintf(fp3, "%d", b4);
         }
         fprintf(fp3, "\n");   
         for (int j = 51; j >= 0; j --)
         {
-            int b5 = read_m_bit(res555[i], j);
+            int b5 = read_m_bit(IS_c5[i], j);
             fprintf(fp3, "%d", b5);
         }
         fprintf(fp3, "\n");    
@@ -273,29 +367,29 @@ int main(int argc, char **argv)
 
     free(test_int);
 
-    free(res1);
-    free(res2);
-    free(res3);
-    free(res4);
-    free(res5);
+    free(CR_c1);
+    free(CR_c2);
+    free(CR_c3);
+    free(CR_c4);
+    free(CR_c5);
 
-    free(res11);
-    free(res22);
-    free(res33);
-    free(res44);
-    free(res55);
+    free(CR_cr1);
+    free(CR_cr2);
+    free(CR_cr3);
+    free(CR_cr4);
+    free(CR_cr5);
 
-    free(res111);
-    free(res222);
-    free(res333);
-    free(res444);
-    free(res555);
+    free(IS_c1);
+    free(IS_c2);
+    free(IS_c3);
+    free(IS_c4);
+    free(IS_c5);
 
-    free(res1111);
-    free(res2222);
-    free(res3333);
-    free(res4444);
-    free(res5555);
+    free(IS_cr1);
+    free(IS_cr2);
+    free(IS_cr3);
+    free(IS_cr4);
+    free(IS_cr5);
 
     return 0;
 }

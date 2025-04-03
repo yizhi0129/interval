@@ -1,6 +1,7 @@
 #pragma STDC FENV_ACCESS ON
 
 #include "convert.h"
+#include <ieee754.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -34,6 +35,15 @@ double set_m_bit(double x, int index, int value)
     return u.d;
 }
 
+int get_sign_bit(double x) 
+{
+    union {
+        double d;
+        uint64_t u;
+    } u = { .d = x };
+
+    return (u.u >> 63) & 1;  
+}
 
 double truncate_m(double x, int index) 
 {
@@ -75,8 +85,8 @@ FP_INT CR_FP1(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("1 Error: No enough precision to convert!\t");
-            printf("c = %lf, r = %lf,\t", int_cr.center, int_cr.radius);
+            printf("1 Conversion Failed\t");
+            printf("c = %.15f, r = %.15f,\t", int_cr.center, int_cr.radius);
             printf("e_c = %d, e_r = %d\n", e_c, e_r);
             return 1;
         }
@@ -86,7 +96,7 @@ FP_INT CR_FP1(C_R int_cr)
         r_tilde = set_pow2(e_c - p);
 
         //compare
-        int b = read_m_bit(int_cr.center, index);
+        int b = read_m_bit(int_cr.center, index) ^ get_sign_bit(int_cr.center);
         if ((2*b-1)*int_cr.center + int_cr.radius <= (2*b-1)*c_tilde + r_tilde) 
         {
             break;
@@ -114,8 +124,8 @@ FP_INT CR_FP2(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("2 Error: No enough precision to convert!\t");
-            printf("c = %lf, r = %lf,\t", c, r);
+            printf("2 Conversion Failed\t");
+            printf("c = %.15f, r = %.15f,\t", c, r);
             printf("e_c = %d, e_r = %d\n", e_c, e_r);
             return 1;
         }
@@ -161,8 +171,8 @@ FP_INT CR_FP3(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("3 Error: No enough precision to convert!\t");
-            printf("c = %lf, r = %lf,\t", c, r);
+            printf("3 Conversion Failed\t");
+            printf("c = %.15f, r = %.15f,\t", c, r);
             printf("e_c = %d, e_r = %d\n", e_c, e_r);
             return 1;
         }
@@ -204,8 +214,8 @@ FP_INT CR_FP4(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("4 Error: No enough precision to convert!\t");
-            printf("c = %lf, r = %lf,\t", c, r);
+            printf("4 Conversion Failed\t");
+            printf("c = %.15f, r = %.15f,\t", c, r);
             printf("e_c = %d, e_r = %d\n", e_c, e_r);
             return 1;
         }
@@ -214,7 +224,7 @@ FP_INT CR_FP4(C_R int_cr)
         c_tilde = set_m_bit(c_tilde, index, 1);
         r_tilde = set_pow2(e_c - p);
 
-        int b = read_m_bit(c, index);
+        int b = read_m_bit(c, index) ^ get_sign_bit(c);
         if ((2*b-1) * c + r <= (2*b-1) * c_tilde + r_tilde) 
         {
             break;
@@ -243,8 +253,8 @@ FP_INT CR_FP5(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("5 Error: No enough precision to convert!\t");
-            printf("c = %lf, r = %lf,\t", c, r);
+            printf("5 Conversion Failed\t");
+            printf("c = %.15f, r = %.15f,\t", c, r);
             printf("e_c = %d, e_r = %d\n", e_c, e_r);
             return 1;
         }
@@ -253,7 +263,7 @@ FP_INT CR_FP5(C_R int_cr)
         c_tilde = set_m_bit(c_tilde, index, 1);
         r_tilde = set_pow2(e_c - p);
 
-        int b = read_m_bit(c, index);
+        int b = read_m_bit(c, index) ^ get_sign_bit(c);
         if ((2*b-1) * c + r <= (2*b-1) * c_tilde + r_tilde) 
         {
             break;

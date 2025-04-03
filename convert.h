@@ -1,7 +1,6 @@
 #ifndef _CONVERT_H_
 #define _CONVERT_H_
 
-#include <ieee754.h>
 
 typedef double FP_INT;
 
@@ -27,6 +26,8 @@ double set_m_bit(double x, int index, int value);
 double truncate_m(double x, int index);
 
 double set_pow2(int exp); 
+
+int get_sign_bit(double x); 
 
 FP_INT CR_FP1(C_R int_cr);
 FP_INT CR_FP2(C_R int_cr);
