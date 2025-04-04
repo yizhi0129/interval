@@ -1,10 +1,6 @@
-CR_c1: 7
-CR_c2: 7
-CR_c3: 7
-CR_c4: 7
-CR_c5: 7
-IS_c1: 5
-IS_c2: 5
-IS_c3: 5
-IS_c4: 5
-IS_c5: 5
+IS_c1: 3
+IS_c2: 3
+IS_c3: 3
+IS_c4: 3
+IS_c5: 3
+IS_c6: 3

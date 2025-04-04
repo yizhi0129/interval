@@ -21,9 +21,13 @@ static inline int int_min(int a, int b)
 
 int read_m_bit(double x, int index);
 
-double set_m_bit(double x, int index, int value);
+double set_m_bit1(double x, int index);
+
+double set_m_bit1_ieee(double x, int index);
 
 double truncate_m(double x, int index);
+
+double truncate_m_ieee(double x, int index);
 
 double set_pow2(int exp); 
 
@@ -34,12 +38,14 @@ FP_INT CR_FP2(C_R int_cr);
 FP_INT CR_FP3(C_R int_cr);
 FP_INT CR_FP4(C_R int_cr);
 FP_INT CR_FP5(C_R int_cr);
+FP_INT CR_FP6(C_R int_cr);
 
 FP_INT IS_FP1(INF_SUP int_is);
 FP_INT IS_FP2(INF_SUP int_is);
 FP_INT IS_FP3(INF_SUP int_is);
 FP_INT IS_FP4(INF_SUP int_is);
 FP_INT IS_FP5(INF_SUP int_is);
+FP_INT IS_FP6(INF_SUP int_is);
 
 C_R FP_CR(FP_INT c_tilde);
 

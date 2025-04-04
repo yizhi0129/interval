@@ -6,7 +6,7 @@
 #include <math.h>
 
 
-#define N 1000
+#define N 2500
 
 double get_time_ms() 
 {
@@ -25,29 +25,33 @@ int main(int argc, char **argv)
     FP_INT *CR_c3 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *CR_c4 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *CR_c5 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *CR_c6 = malloc(2 * N * sizeof(FP_INT));
 
     C_R *CR_cr1 = malloc(2 * N * sizeof(C_R));
     C_R *CR_cr2 = malloc(2 * N * sizeof(C_R));
     C_R *CR_cr3 = malloc(2 * N * sizeof(C_R));
     C_R *CR_cr4 = malloc(2 * N * sizeof(C_R));
     C_R *CR_cr5 = malloc(2 * N * sizeof(C_R));
+    C_R *CR_cr6 = malloc(2 * N * sizeof(C_R));
 
     FP_INT *IS_c1 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *IS_c2 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *IS_c3 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *IS_c4 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *IS_c5 = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *IS_c6 = malloc(2 * N * sizeof(FP_INT));
 
     C_R *IS_cr1 = malloc(2 * N * sizeof(C_R));
     C_R *IS_cr2 = malloc(2 * N * sizeof(C_R));
     C_R *IS_cr3 = malloc(2 * N * sizeof(C_R));
     C_R *IS_cr4 = malloc(2 * N * sizeof(C_R));
     C_R *IS_cr5 = malloc(2 * N * sizeof(C_R));
+    C_R *IS_cr6 = malloc(2 * N * sizeof(C_R));
 
     const double c_exp_min = -6.0;
     const double c_exp_max = 9.0;
     const double r_exp_min = -15.0;
-    const double r_exp_max = -3.0;
+    const double r_exp_max = -4.0;
 
     srand(get_time_ms());    
 
@@ -113,6 +117,13 @@ int main(int argc, char **argv)
         CR_c5[i] = CR_FP5(test_int[i]);
     }
     double end5 = get_time_ms();
+
+    double start6 = get_time_ms();
+    for (int i = 0; i < 2 * N; i ++)
+    {
+        CR_c6[i] = CR_FP6(test_int[i]);
+    }
+    double end6 = get_time_ms();
   
     double start111 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
@@ -149,6 +160,13 @@ int main(int argc, char **argv)
     }
     double end555 = get_time_ms();
 
+    double start666 = get_time_ms();
+    for (int i = 0; i < 2 * N; i ++)
+    {
+        IS_c6[i] = IS_FP6(test_int2[i]);
+    }
+    double end666 = get_time_ms();
+
     double start0 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
@@ -157,11 +175,13 @@ int main(int argc, char **argv)
         CR_cr3[i] = FP_CR(CR_c3[i]);
         CR_cr4[i] = FP_CR(CR_c4[i]);
         CR_cr5[i] = FP_CR(CR_c5[i]);
+        CR_cr6[i] = FP_CR(CR_c6[i]);
         IS_cr1[i] = FP_CR(IS_c1[i]);
         IS_cr2[i] = FP_CR(IS_c2[i]);
         IS_cr3[i] = FP_CR(IS_c3[i]);
         IS_cr4[i] = FP_CR(IS_c4[i]);
         IS_cr5[i] = FP_CR(IS_c5[i]);
+        IS_cr6[i] = FP_CR(IS_c6[i]);
     }
     double end0 = get_time_ms();
 
@@ -170,9 +190,9 @@ int main(int argc, char **argv)
         perror("Failed to open convert_time.txt");
         return 1;
     }
-    fprintf(fp, "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t(ms)\n", 
-        end1 - start1, end2 - start2, end3 - start3, end4 - start4, 0.1 * (end0 - start0), 
-        end111 - start111, end222 - start222, end333 - start333, end444 - start444, end5 - start5, end555 - start555); 
+    fprintf(fp, "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t(ms)\n", 
+        end1 - start1, end2 - start2, end3 - start3, end4 - start4, (end0 - start0) / 12.0, 
+        end111 - start111, end222 - start222, end333 - start333, end444 - start444, end5 - start5, end555 - start555, end6 - start6, end666 - start666); 
     fclose(fp);  
 
     FILE *fp2 = fopen("CR_FPINT_res.txt", "a");
@@ -234,6 +254,16 @@ int main(int argc, char **argv)
         {
             fprintf(fp2, "Error\n");
         }
+        fprintf(fp2, "CR_c6 = [%.15f,\t%.15f]\t", CR_c6[i] - CR_cr6[i].radius, CR_c6[i] + CR_cr6[i].radius);
+        if (CR_c6[i] - CR_cr6[i].radius <= test_int[i].center - test_int[i].radius && 
+            CR_c6[i] + CR_cr6[i].radius >= test_int[i].center + test_int[i].radius)
+        {
+            fprintf(fp2, "OK\n");
+        }
+        else
+        {
+            fprintf(fp2, "Error\n");
+        }
         for (int j = 51; j >= 0; j --)
         {
             int b0 = read_m_bit(test_int[i].center, j);
@@ -269,7 +299,13 @@ int main(int argc, char **argv)
             int b5 = read_m_bit(CR_c5[i], j);
             fprintf(fp2, "%d", b5);
         }
-        fprintf(fp2, "\n");  
+        fprintf(fp2, "\n");   
+        for (int j = 51; j >= 0; j --)
+        {
+            int b6 = read_m_bit(CR_c6[i], j);
+            fprintf(fp2, "%d", b6);
+        }
+        fprintf(fp2, "\n");
     }
     fclose(fp2);
 
@@ -332,6 +368,16 @@ int main(int argc, char **argv)
         {
             fprintf(fp3, "Error\n");
         }
+        fprintf(fp3, "IS_c6 = [%.15f,\t%.15f]\t", IS_c6[i] - IS_cr6[i].radius, IS_c6[i] + IS_cr6[i].radius);
+        if (IS_c6[i] - IS_cr6[i].radius <= test_int2[i].inf && 
+            IS_c6[i] + IS_cr6[i].radius >= test_int2[i].sup)
+        {
+            fprintf(fp3, "OK\n");
+        }
+        else
+        {
+            fprintf(fp3, "Error\n");
+        }
         for (int j = 51; j >= 0; j --)
         {
             int b1 = read_m_bit(IS_c1[i], j);
@@ -361,7 +407,13 @@ int main(int argc, char **argv)
             int b5 = read_m_bit(IS_c5[i], j);
             fprintf(fp3, "%d", b5);
         }
-        fprintf(fp3, "\n");    
+        fprintf(fp3, "\n");   
+        for (int j = 51; j >= 0; j --)
+        {
+            int b6 = read_m_bit(IS_c6[i], j);
+            fprintf(fp3, "%d", b6);
+        }
+        fprintf(fp3, "\n");  
     }
     fclose(fp3);
 
