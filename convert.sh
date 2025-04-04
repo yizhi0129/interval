@@ -7,6 +7,7 @@ make
 for i in {1..30}
 do 
     ./test_convert >> fail.txt
+    sleep 1
 done
 
 # plot
