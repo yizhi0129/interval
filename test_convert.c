@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     C_R *IS_cr5 = malloc(2 * N * sizeof(C_R));
     C_R *IS_cr6 = malloc(2 * N * sizeof(C_R));
 
-    const double c_exp_min = -6.0;
+    const double c_exp_min = - 6.0;
     const double c_exp_max = 9.0;
     const double r_exp_min = -15.0;
     const double r_exp_max = -4.0;
