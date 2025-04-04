@@ -1,7 +1,6 @@
 #pragma STDC FENV_ACCESS ON
 
 #include "convert.h"
-#include <ieee754.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -10,9 +9,6 @@
 #include <float.h>
 #include <fenv.h>
 
-#define DOUBLE_ULS 1023
-#define DOUBLE_E 52
-#define DOUBLE_M 11
 
 int get_sign_bit(double x) 
 {
@@ -128,8 +124,11 @@ FP_INT CR_FP1(C_R int_cr)
         if (p < 1)
         {
             printf("1 Conversion Failed\t");
-            printf("c = %.15f, r = %.15f,\t", int_cr.center, int_cr.radius);
-            printf("e_c = %d, e_r = %d\n", e_c, e_r);
+            printf("c: ");
+            print_binary(int_cr.center);
+            printf(" r: ");
+            print_binary(int_cr.radius);
+            printf("\n");
             return 1;
         }
         int index = DOUBLE_E - p;
@@ -167,8 +166,11 @@ FP_INT CR_FP2(C_R int_cr)
         if (p < 1)
         {
             printf("2 Conversion Failed\t");
-            printf("c = %.15f, r = %.15f,\t", c, r);
-            printf("e_c = %d, e_r = %d\n", e_c, e_r);
+            printf("c: ");
+            print_binary(c);
+            printf(" r: ");
+            print_binary(r);
+            printf("\n");
             return 1;
         }
         int index = DOUBLE_E - p;
@@ -214,8 +216,11 @@ FP_INT CR_FP3(C_R int_cr)
         if (p < 1)
         {
             printf("3 Conversion Failed\t");
-            printf("c = %.15f, r = %.15f,\t", c, r);
-            printf("e_c = %d, e_r = %d\n", e_c, e_r);
+            printf("c: ");
+            print_binary(c);
+            printf(" r: ");
+            print_binary(r);
+            printf("\n");
             return 1;
         }
         int index = DOUBLE_E - p;
@@ -257,8 +262,11 @@ FP_INT CR_FP4(C_R int_cr)
         if (p < 1)
         {
             printf("4 Conversion Failed\t");
-            printf("c = %.15f, r = %.15f,\t", c, r);
-            printf("e_c = %d, e_r = %d\n", e_c, e_r);
+            printf("c: ");
+            print_binary(c);
+            printf(" r: ");
+            print_binary(r);
+            printf("\n");
             return 1;
         }
         int index = DOUBLE_E - p;
@@ -296,8 +304,11 @@ FP_INT CR_FP5(C_R int_cr)
         if (p < 1)
         {
             printf("5 Conversion Failed\t");
-            printf("c = %.15f, r = %.15f,\t", c, r);
-            printf("e_c = %d, e_r = %d\n", e_c, e_r);
+            printf("c: ");
+            print_binary(c);
+            printf(" r: ");
+            print_binary(r);
+            printf("\n");
             return 1;
         }
         int index = DOUBLE_E - p;
@@ -333,8 +344,11 @@ FP_INT CR_FP6(C_R int_cr)
         if (p < 1)
         {
             printf("6 Conversion Failed\t");
-            printf("c = %.15f, r = %.15f,\t", int_cr.center, int_cr.radius);
-            printf("e_c = %d, e_r = %d\n", e_c, e_r);
+            printf("c: ");
+            print_binary(int_cr.center);
+            printf(" r: ");
+            print_binary(int_cr.radius);
+            printf("\n");
             return 1;
         }
         int index = DOUBLE_E - p;
@@ -447,4 +461,20 @@ C_R FP_CR(FP_INT c_tilde)
     double r_tilde = set_pow2(e_c - p);
     C_R result = {c_tilde, r_tilde};
     return result;
+}
+
+void print_binary(double x)
+{
+    union ieee754_double u;
+    u.d = x;
+    int exp = u.ieee.exponent - DOUBLE_ULS;
+    int sign = get_sign_bit(x);
+    (sign == 1) ? printf("- ") : printf("+ ");
+    printf("1.");
+    for (int i = DOUBLE_E - 1; i >= 0; i --)
+    {
+        int b = read_m_bit(x, i);
+        printf("%d", b);
+    }
+    printf(" 2^%d", exp);
 }

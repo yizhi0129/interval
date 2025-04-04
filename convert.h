@@ -1,6 +1,11 @@
 #ifndef _CONVERT_H_
 #define _CONVERT_H_
 
+#define DOUBLE_ULS 1023
+#define DOUBLE_E 52
+#define DOUBLE_M 11
+
+#include <ieee754.h>
 
 typedef double FP_INT;
 
@@ -48,5 +53,8 @@ FP_INT IS_FP5(INF_SUP int_is);
 FP_INT IS_FP6(INF_SUP int_is);
 
 C_R FP_CR(FP_INT c_tilde);
+
+void print_binary(double x);
+
 
 #endif

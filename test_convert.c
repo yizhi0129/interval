@@ -15,6 +15,22 @@ double get_time_ms()
     return (double)tv.tv_sec * 1000.0 + (double)tv.tv_usec / 1000.0;
 }
 
+void fprint_binary(FILE *fp, double x)
+{
+    union ieee754_double u;
+    u.d = x;
+    int exp = u.ieee.exponent - DOUBLE_ULS;
+    int sign = get_sign_bit(x);
+    (sign == 1) ? fprintf(fp, "- ") : fprintf(fp, "+ ");
+    fprintf(fp, "1.");
+    for (int i = DOUBLE_E - 1; i >= 0; i --)
+    {
+        int b = read_m_bit(x, i);
+        fprintf(fp, "%d", b);
+    }
+    fprintf(fp, " 2^%d\n", exp);
+}
+
 int main(int argc, char **argv)
 {
     C_R *test_int = malloc(2 * N * sizeof(C_R));
@@ -186,7 +202,8 @@ int main(int argc, char **argv)
     double end0 = get_time_ms();
 
     FILE *fp = fopen("convert_time.txt", "a"); 
-    if (!fp) {
+    if (!fp) 
+    {
         perror("Failed to open convert_time.txt");
         return 1;
     }
@@ -196,7 +213,8 @@ int main(int argc, char **argv)
     fclose(fp);  
 
     FILE *fp2 = fopen("CR_FPINT_res.txt", "a");
-    if (!fp2) {
+    if (!fp2) 
+    {
         perror("Failed to open convert_res.txt");
         return 1;
     }
@@ -264,53 +282,20 @@ int main(int argc, char **argv)
         {
             fprintf(fp2, "Error\n");
         }
-        for (int j = 51; j >= 0; j --)
-        {
-            int b0 = read_m_bit(test_int[i].center, j);
-            fprintf(fp2, "%d", b0);
-        }
-        fprintf(fp2, "\n");
-        for (int j = 51; j >= 0; j --)
-        {
-            int b1 = read_m_bit(CR_c1[i], j);
-            fprintf(fp2, "%d", b1);
-        }
-        fprintf(fp2, "\n");
-        for (int j = 51; j >= 0; j --)
-        {
-            int b2 = read_m_bit(CR_c2[i], j);
-            fprintf(fp2, "%d", b2);
-        }
-        fprintf(fp2, "\n");
-        for (int j = 51; j >= 0; j --)
-        {
-            int b3 = read_m_bit(CR_c3[i], j);
-            fprintf(fp2, "%d", b3);
-        }
-        fprintf(fp2, "\n");
-        for (int j = 51; j >= 0; j --)
-        {
-            int b4 = read_m_bit(CR_c4[i], j);
-            fprintf(fp2, "%d", b4);
-        }
-        fprintf(fp2, "\n");     
-        for (int j = 51; j >= 0; j --)
-        {
-            int b5 = read_m_bit(CR_c5[i], j);
-            fprintf(fp2, "%d", b5);
-        }
-        fprintf(fp2, "\n");   
-        for (int j = 51; j >= 0; j --)
-        {
-            int b6 = read_m_bit(CR_c6[i], j);
-            fprintf(fp2, "%d", b6);
-        }
+        fprint_binary(fp2, test_int[i].center);
+        fprint_binary(fp2, CR_c1[i]);
+        fprint_binary(fp2, CR_c2[i]);
+        fprint_binary(fp2, CR_c3[i]);
+        fprint_binary(fp2, CR_c4[i]);
+        fprint_binary(fp2, CR_c5[i]);
+        fprint_binary(fp2,CR_c6[i]);
         fprintf(fp2, "\n");
     }
     fclose(fp2);
 
     FILE *fp3 = fopen("IS_FPINT_res.txt", "a");
-    if (!fp3) {
+    if (!fp3) 
+    {
         perror("Failed to open IS_FPINT_res.txt");
         return 1;
     }
@@ -378,42 +363,13 @@ int main(int argc, char **argv)
         {
             fprintf(fp3, "Error\n");
         }
-        for (int j = 51; j >= 0; j --)
-        {
-            int b1 = read_m_bit(IS_c1[i], j);
-            fprintf(fp3, "%d", b1);
-        }
+        fprint_binary(fp3, IS_c1[i]);
+        fprint_binary(fp3, IS_c2[i]);
+        fprint_binary(fp3, IS_c3[i]);
+        fprint_binary(fp3, IS_c4[i]);
+        fprint_binary(fp3, IS_c5[i]);
+        fprint_binary(fp3, IS_c6[i]);
         fprintf(fp3, "\n");
-        for (int j = 51; j >= 0; j --)
-        {
-            int b2 = read_m_bit(IS_c2[i], j);
-            fprintf(fp3, "%d", b2);
-        }
-        fprintf(fp3, "\n");
-        for (int j = 51; j >= 0; j --)
-        {
-            int b3 = read_m_bit(IS_c3[i], j);
-            fprintf(fp3, "%d", b3);
-        }
-        fprintf(fp3, "\n");
-        for (int j = 51; j >= 0; j --)
-        {
-            int b4 = read_m_bit(IS_c4[i], j);
-            fprintf(fp3, "%d", b4);
-        }
-        fprintf(fp3, "\n");   
-        for (int j = 51; j >= 0; j --)
-        {
-            int b5 = read_m_bit(IS_c5[i], j);
-            fprintf(fp3, "%d", b5);
-        }
-        fprintf(fp3, "\n");   
-        for (int j = 51; j >= 0; j --)
-        {
-            int b6 = read_m_bit(IS_c6[i], j);
-            fprintf(fp3, "%d", b6);
-        }
-        fprintf(fp3, "\n");  
     }
     fclose(fp3);
 
