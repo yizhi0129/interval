@@ -123,13 +123,9 @@ FP_INT CR_FP1(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("1 Conversion Failed\t");
-            printf("c: ");
-            print_binary(int_cr.center);
-            printf(" r: ");
-            print_binary(int_cr.radius);
-            printf("\n");
-            return 1;
+            c_tilde = set_pow2(e_c);
+            r_tilde = set_pow2(e_c);
+            break;
         }
         int index = DOUBLE_E - p;
         c_tilde = truncate_m(c_tilde, index);
@@ -165,13 +161,9 @@ FP_INT CR_FP2(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("2 Conversion Failed\t");
-            printf("c: ");
-            print_binary(c);
-            printf(" r: ");
-            print_binary(r);
-            printf("\n");
-            return 1;
+            c_tilde = set_pow2(e_c);
+            r_tilde = set_pow2(e_c);
+            break;
         }
         int index = DOUBLE_E - p;
         c_tilde = truncate_m(c, index);
@@ -215,13 +207,9 @@ FP_INT CR_FP3(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("3 Conversion Failed\t");
-            printf("c: ");
-            print_binary(c);
-            printf(" r: ");
-            print_binary(r);
-            printf("\n");
-            return 1;
+            c_tilde = set_pow2(e_c);
+            r_tilde = set_pow2(e_c);
+            break;
         }
         int index = DOUBLE_E - p;
         c_tilde = truncate_m(c_tilde, index);
@@ -261,13 +249,9 @@ FP_INT CR_FP4(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("4 Conversion Failed\t");
-            printf("c: ");
-            print_binary(c);
-            printf(" r: ");
-            print_binary(r);
-            printf("\n");
-            return 1;
+            c_tilde = set_pow2(e_c);
+            r_tilde = set_pow2(e_c);
+            break;
         }
         int index = DOUBLE_E - p;
         c_tilde = truncate_m(c, index);
@@ -303,13 +287,9 @@ FP_INT CR_FP5(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("5 Conversion Failed\t");
-            printf("c: ");
-            print_binary(c);
-            printf(" r: ");
-            print_binary(r);
-            printf("\n");
-            return 1;
+            c_tilde = set_pow2(e_c);
+            r_tilde = set_pow2(e_c);
+            break;
         }
         int index = DOUBLE_E - p;
         c_tilde = truncate_m(c, index);
@@ -343,13 +323,9 @@ FP_INT CR_FP6(C_R int_cr)
     {
         if (p < 1)
         {
-            printf("6 Conversion Failed\t");
-            printf("c: ");
-            print_binary(int_cr.center);
-            printf(" r: ");
-            print_binary(int_cr.radius);
-            printf("\n");
-            return 1;
+            c_tilde = set_pow2(e_c);
+            r_tilde = set_pow2(e_c);
+            break;
         }
         int index = DOUBLE_E - p;
         c_tilde = truncate_m_ieee(c_tilde, index);
@@ -448,7 +424,7 @@ C_R FP_CR(FP_INT c_tilde)
     u.d = c_tilde;
     int e_c = u.ieee.exponent - DOUBLE_ULS;
     int index = 0;
-    for (int i = 0; i < DOUBLE_E; i ++)
+    for (int i = 0; i <= DOUBLE_E; i ++)
     {
         int b = read_m_bit(c_tilde, i);
         if (b == 1)
