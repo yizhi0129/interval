@@ -38,6 +38,8 @@ double set_pow2(int exp);
 
 int get_sign_bit(double x); 
 
+double set_sign_bit(double x, int sign);
+
 FP_INT CR_FP1(C_R int_cr);
 FP_INT CR_FP2(C_R int_cr);
 FP_INT CR_FP3(C_R int_cr);
