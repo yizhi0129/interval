@@ -30,6 +30,7 @@ double set_sign_bit(double x, int sign)
 }
 
 
+// check valid zone
 int read_m_bit(double x, int index)
 {
     uint64_t bits;
@@ -128,9 +129,9 @@ FP_INT CR_FP1(C_R int_cr)
     int p = int_min(e_c - e_r, DOUBLE_E);
     FP_INT c_tilde = int_cr.center;
     double r_tilde = 0.0;
-    int a = read_m_bit(int_cr.radius,DOUBLE_E + 1 - e_c + e_r) ^ 1;
+    //int a = read_m_bit(int_cr.radius, DOUBLE_E + 1 - e_c + e_r) ^ 1;
     int s = get_sign_bit(int_cr.center);
-    int b = 1;
+    int b = 1 ^ s;
     double u = set_pow2(e_c - 52);
     while (true)
     {
@@ -150,7 +151,7 @@ FP_INT CR_FP1(C_R int_cr)
         }
         
         //compare      
-        if ((2*b-1)*int_cr.center + int_cr.radius + a * u <= (2*b-1)*c_tilde + r_tilde) 
+        if ((2*b-1)*int_cr.center + int_cr.radius + u <= (2*b-1)*c_tilde + r_tilde) 
         {
             break;
         }
@@ -271,7 +272,7 @@ FP_INT CR_FP4(C_R int_cr)
     double r_tilde = 0.0;
     int s = get_sign_bit(c);
     int a = read_m_bit(int_cr.radius,DOUBLE_E + 1 - e_c + e_r) ^ 1;
-    int b = 1;
+    int b = 1 ^ s;
     double u = set_pow2(e_c - 52);
     while (true)
     {
@@ -290,7 +291,7 @@ FP_INT CR_FP4(C_R int_cr)
             r_tilde = set_pow2(e_c - p);
         }
 
-        if ((2*b-1) * c + r + a * u <= (2*b-1) * c_tilde + r_tilde) 
+        if ((2*b-1) * c + r + u <= (2*b-1) * c_tilde + r_tilde) 
         {
             break;
         }
@@ -316,7 +317,7 @@ FP_INT CR_FP5(C_R int_cr)
     double r_tilde = 0.0;
     int s = get_sign_bit(c);
     int a = read_m_bit(int_cr.radius,DOUBLE_E + 1 - e_c + e_r) ^ 1;
-    int b = 1;
+    int b = 1 ^ s;
     double u = set_pow2(e_c - 52);
     while (true)
     {
@@ -335,7 +336,7 @@ FP_INT CR_FP5(C_R int_cr)
             r_tilde = set_pow2(e_c - p);
         }
 
-        if ((2*b-1) * c + r + a * u <= (2*b-1) * c_tilde + r_tilde) 
+        if ((2*b-1) * c + r + u <= (2*b-1) * c_tilde + r_tilde) 
         {
             break;
         }
@@ -359,7 +360,7 @@ FP_INT CR_FP6(C_R int_cr)
     double r_tilde = 0.0;
     int s = get_sign_bit(int_cr.center);
     int a = read_m_bit(int_cr.radius,DOUBLE_E + 1 - e_c + e_r) ^ 1;
-    int b = 1;
+    int b = 1 ^ s;
     double u = set_pow2(e_c - 52);
     while (true)
     {
@@ -378,7 +379,7 @@ FP_INT CR_FP6(C_R int_cr)
             r_tilde = set_pow2(e_c - p);
         }
 
-        if ((2*b-1) * int_cr.center + int_cr.radius + a * u <= (2*b-1) * c_tilde + r_tilde) 
+        if ((2*b-1) * int_cr.center + int_cr.radius + u <= (2*b-1) * c_tilde + r_tilde) 
         {
             break;
         }

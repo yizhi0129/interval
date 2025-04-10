@@ -6,7 +6,7 @@
 #include <math.h>
 
 
-#define N 10000
+#define N 20000
 
 double get_time_ms() 
 {
@@ -219,6 +219,38 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    for(int i = 0; i < 2 * N; i += 1000)
+    {
+        fprintf(fp2, "test_int[%d] = [%.10e,\t%.10e]\n", i, test_int[i].center - test_int[i].radius, test_int[i].center + test_int[i].radius);
+        fprint_binary(fp2, test_int[i].center);
+        fprint_binary(fp2, test_int[i].radius);
+        fprintf(fp2, "CR1:\n");
+        fprint_binary(fp2, CR_c1[i]);
+        fprint_binary(fp2, CR_cr1[i].center);
+        fprint_binary(fp2, CR_cr1[i].radius);
+        fprintf(fp2, "CR2:\n");
+        fprint_binary(fp2, CR_c2[i]);
+        fprint_binary(fp2, CR_cr2[i].center);
+        fprint_binary(fp2, CR_cr2[i].radius);
+        fprintf(fp2, "CR3:\n");
+        fprint_binary(fp2, CR_c3[i]);
+        fprint_binary(fp2, CR_cr3[i].center);
+        fprint_binary(fp2, CR_cr3[i].radius);
+        fprintf(fp2, "CR4:\n");
+        fprint_binary(fp2, CR_c4[i]);
+        fprint_binary(fp2, CR_cr4[i].center);
+        fprint_binary(fp2, CR_cr4[i].radius);
+        fprintf(fp2, "CR5:\n");
+        fprint_binary(fp2, CR_c5[i]);
+        fprint_binary(fp2, CR_cr5[i].center);
+        fprint_binary(fp2, CR_cr5[i].radius);
+        fprintf(fp2, "CR6:\n");
+        fprint_binary(fp2, CR_c6[i]);
+        fprint_binary(fp2, CR_cr6[i].center);
+        fprint_binary(fp2, CR_cr6[i].radius);
+        fprintf(fp2, "\n");
+    }
+
     for (int i = 0; i < 2 * N; i ++)
     {   
         if (CR_c1[i] - CR_cr1[i].radius > test_int[i].center - test_int[i].radius || 
@@ -300,6 +332,37 @@ int main(int argc, char **argv)
     {
         perror("Failed to open IS_FPINT_res.txt");
         return 1;
+    }
+
+    for (int i = 0; i < 2 * N; i += 1000)
+    {
+        fprintf(fp3, "test_int2[%d] = [%.10e,\t%.10e]\n", i, test_int2[i].inf, test_int2[i].sup);
+        fprint_binary(fp3, test_int2[i].inf);
+        fprint_binary(fp3, test_int2[i].sup);
+        fprintf(fp3, "IS1:\n");
+        fprint_binary(fp3, IS_c1[i]);
+        fprint_binary(fp3, IS_cr1[i].center);
+        fprint_binary(fp3, IS_cr1[i].radius);
+        fprintf(fp3, "IS2:\n");
+        fprint_binary(fp3, IS_c2[i]);
+        fprint_binary(fp3, IS_cr2[i].center);
+        fprint_binary(fp3, IS_cr2[i].radius);
+        fprintf(fp3, "IS3:\n");
+        fprint_binary(fp3, IS_c3[i]);
+        fprint_binary(fp3, IS_cr3[i].center);
+        fprint_binary(fp3, IS_cr3[i].radius);
+        fprintf(fp3, "IS4:\n");
+        fprint_binary(fp3, IS_c4[i]);
+        fprint_binary(fp3, IS_cr4[i].center);
+        fprint_binary(fp3, IS_cr4[i].radius);
+        fprintf(fp3, "IS5:\n");
+        fprint_binary(fp3, IS_c5[i]);
+        fprint_binary(fp3, IS_cr5[i].center);
+        fprint_binary(fp3, IS_cr5[i].radius);
+        fprintf(fp3, "IS6:\n");
+        fprint_binary(fp3, IS_c6[i]);
+        fprint_binary(fp3, IS_cr6[i].center);
+        fprint_binary(fp3, IS_cr6[i].radius);
     }
 
     for (int i = 0; i < 2 * N; i ++)
