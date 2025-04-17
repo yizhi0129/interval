@@ -1,5 +1,3 @@
-#pragma STDC FENV_ACCESS ON
-
 #include "convert.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -271,7 +269,6 @@ FP_INT CR_FP4(C_R int_cr)
     FP_INT c_tilde = int_cr.center;
     double r_tilde = 0.0;
     int s = get_sign_bit(c);
-    int a = read_m_bit(int_cr.radius,DOUBLE_E + 1 - e_c + e_r) ^ 1;
     int b = 1 ^ s;
     double u = set_pow2(e_c - 52);
     while (true)
@@ -316,7 +313,6 @@ FP_INT CR_FP5(C_R int_cr)
     FP_INT c_tilde = int_cr.center;
     double r_tilde = 0.0;
     int s = get_sign_bit(c);
-    int a = read_m_bit(int_cr.radius,DOUBLE_E + 1 - e_c + e_r) ^ 1;
     int b = 1 ^ s;
     double u = set_pow2(e_c - 52);
     while (true)
@@ -359,7 +355,6 @@ FP_INT CR_FP6(C_R int_cr)
     FP_INT c_tilde = int_cr.center;
     double r_tilde = 0.0;
     int s = get_sign_bit(int_cr.center);
-    int a = read_m_bit(int_cr.radius,DOUBLE_E + 1 - e_c + e_r) ^ 1;
     int b = 1 ^ s;
     double u = set_pow2(e_c - 52);
     while (true)
