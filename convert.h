@@ -46,6 +46,7 @@ FP_INT CR_FP3(C_R int_cr);
 FP_INT CR_FP4(C_R int_cr);
 FP_INT CR_FP5(C_R int_cr);
 FP_INT CR_FP6(C_R int_cr);
+FP_INT CR_FP1b(C_R int_cr);
 
 FP_INT IS_FP1(INF_SUP int_is);
 FP_INT IS_FP2(INF_SUP int_is);

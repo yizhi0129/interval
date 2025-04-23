@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <stdlib.h>
 #include <math.h>
+#include <fenv.h>
 
 #define MAX_RATE 1e+300
 
@@ -13,6 +14,22 @@ double get_time_ms()
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (double)tv.tv_sec * 1000.0 + (double)tv.tv_usec / 1000.0;
+}
+
+void fprint_binary(FILE *fp, double x)
+{
+    union ieee754_double u;
+    u.d = x;
+    int exp = u.ieee.exponent - DOUBLE_ULS;
+    int sign = get_sign_bit(x);
+    (sign == 1) ? fprintf(fp, "- ") : fprintf(fp, "+ ");
+    fprintf(fp, "1.");
+    for (int i = DOUBLE_E - 1; i >= 0; i --)
+    {
+        int b = read_m_bit(x, i);
+        fprintf(fp, "%d", b);
+    }
+    fprintf(fp, " 2^%d\n", exp);
 }
 
 int main(int argc, char **argv)
@@ -169,10 +186,10 @@ int main(int argc, char **argv)
     double start6 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
-        mC1_tilde[i] = CR_FP6(C1[i]);
-        mC2_tilde[i] = CR_FP6(C2[i]);
-        mC3_tilde[i] = CR_FP6(C3[i]);
-        mC4_tilde[i] = CR_FP6(C4[i]);             
+        mC1_tilde[i] = CR_FP5(C1[i]);
+        mC2_tilde[i] = CR_FP5(C2[i]);
+        mC3_tilde[i] = CR_FP5(C3[i]);
+        mC4_tilde[i] = CR_FP5(C4[i]);             
     }
     double end6 = get_time_ms();
 
@@ -221,26 +238,52 @@ int main(int argc, char **argv)
         double r4_rate = rC4_tilde[i] / rC4[i];
 
         // check inclusion
-        if (iC1[i] < mC1[i] - rC1[i] || sC1[i] > mC1[i] + rC1[i] || mC1_tilde[i] - rC1_tilde[i] > iC1[i] || mC1_tilde[i] + rC1_tilde[i] < sC1[i])
+        fesetround(FE_UPWARD);
+        if (iC1[i] + rC1[i] < mC1[i] || sC1[i] > mC1[i] + rC1[i] || mC1_tilde[i] > iC1[i] + rC1_tilde[i] || mC1_tilde[i] + rC1_tilde[i] < sC1[i])
         {
-            fprintf(f, "Error n = %d int_mat_mult C1[%d]\niC1 = %.10f sC1 = %.10f\ninf1 = %.10f sup1 = %.10f\ninf1_tilde = %.10f sup1_tilde = %.10f\n",
-                 n, i, iC1[i], sC1[i], mC1[i] - rC1[i], mC1[i] + rC1[i], mC1_tilde[i] - rC1_tilde[i], mC1_tilde[i] - rC1_tilde[i]);
+            fprintf(f, "Error n = %d int_mat_mult C1[%d]\niC1 = %.10f sC1 = %.10f\nmC1 = %.10f rC1 = %.10f\nmC1_tilde = %.10f rC1_tilde = %.10f\n",
+                 n, i, iC1[i], sC1[i], mC1[i], rC1[i], mC1_tilde[i], rC1_tilde[i]);
+            fprint_binary(f, iC1[i]);
+            fprint_binary(f, sC1[i]);
+            fprint_binary(f, mC1[i]);
+            fprint_binary(f, rC1[i]);
+            fprint_binary(f, mC1_tilde[i]);
+            fprint_binary(f, rC1_tilde[i]);
         }
-        if (iC2[i] < mC2[i] - rC2[i] || sC2[i] > mC2[i] + rC2[i] || mC2_tilde[i] - rC2_tilde[i] > iC2[i] || mC2_tilde[i] + rC2_tilde[i] < sC2[i])
+        if (iC2[i] + rC2[i] < mC2[i] || sC2[i] > mC2[i] + rC2[i] || mC2_tilde[i] > iC2[i] + rC2_tilde[i] || mC2_tilde[i] + rC2_tilde[i] < sC2[i])
         {
-            fprintf(f, "Error n = %d int_mat_mult C2[%d]\niC2 = %.10f sC2 = %.10f\ninf2 = %.10f sup2 = %.10f\ninf2_tilde = %.10f sup2_tilde = %.10f\n", 
-                 n, i, iC2[i], sC2[i], mC2[i] - rC2[i], mC2[i] + rC2[i], mC2_tilde[i] - rC2_tilde[i], mC2_tilde[i] - rC2_tilde[i]);
+            fprintf(f, "Error n = %d int_mat_mult C2[%d]\niC2 = %.10f sC2 = %.10f\nmC2 = %.10f rC2 = %.10f\nmC2_tilde = %.10f rC2_tilde = %.10f\n", 
+                 n, i, iC2[i], sC2[i], mC2[i], rC2[i], mC2_tilde[i], rC2_tilde[i]);
+            fprint_binary(f, iC2[i]);
+            fprint_binary(f, sC2[i]);
+            fprint_binary(f, mC2[i]);
+            fprint_binary(f, rC2[i]);
+            fprint_binary(f, mC2_tilde[i]);
+            fprint_binary(f, rC2_tilde[i]);
         }
-        if (iC3[i] < mC3[i] - rC3[i] || sC3[i] > mC3[i] + rC3[i] || mC3_tilde[i] - rC3_tilde[i] > iC3[i] || mC3_tilde[i] + rC3_tilde[i] < sC3[i])
+        if (iC3[i] + rC3[i] < mC3[i] || sC3[i] > mC3[i] + rC3[i] || mC3_tilde[i] > iC3[i] + rC3_tilde[i] || mC3_tilde[i] + rC3_tilde[i] < sC3[i])
         {
-            fprintf(f, "Error n = %d int_mat_mult C3[%d]\niC3 = %.10f sC3 = %.10f\ninf3 = %.10f sup3 = %.10f\ninf3_tilde = %.10f sup3_tilde = %.10f\n",
-                 n, i, iC3[i], sC3[i], mC3[i] - rC3[i], mC3[i] + rC3[i], mC3_tilde[i] - rC3_tilde[i], mC3_tilde[i] + rC3_tilde[i]);
+            fprintf(f, "Error n = %d int_mat_mult C3[%d]\niC3 = %.10f sC3 = %.10f\nmC3 = %.10f rC3 = %.10f\nmC3_tilde = %.10f rC3_tilde = %.10f\n",
+                 n, i, iC3[i], sC3[i], mC3[i], rC3[i], mC3_tilde[i], rC3_tilde[i]);
+            fprint_binary(f, iC3[i]);
+            fprint_binary(f, sC3[i]);
+            fprint_binary(f, mC3[i]);
+            fprint_binary(f, rC3[i]);
+            fprint_binary(f, mC3_tilde[i]);
+            fprint_binary(f, rC3_tilde[i]);
         }
-        if (iC4[i] < mC4[i] - rC4[i] || sC4[i] > mC4[i] + rC4[i] || mC4_tilde[i] - rC4_tilde[i] > iC4[i] || mC4_tilde[i] + rC4_tilde[i] < sC4[i])
+        if (iC4[i] + rC4[i] < mC4[i] || sC4[i] > mC4[i] + rC4[i] || mC4_tilde[i] > iC4[i] + rC4_tilde[i] || mC4_tilde[i] + rC4_tilde[i] < sC4[i])
         {
-            fprintf(f, "Error n = %d int_mat_mult C4[%d]\niC4 = %.10f sC4 = %.10f\ninf4 = %.10f sup4 = %.10f\ninf4_tilde = %.10f sup4_tilde = %.10f\n",
-                 n, i, iC4[i], sC4[i], mC4[i] - rC4[i], mC4[i] + rC4[i], mC4_tilde[i] - rC4_tilde[i], mC4_tilde[i] - rC4_tilde[i]);
+            fprintf(f, "Error n = %d int_mat_mult C4[%d]\niC4 = %.10f sC4 = %.10f\nmC4 = %.10f rC4 = %.10f\nmC4_tilde = %.10f rC4_tilde = %.10f\n",
+                 n, i, iC4[i], sC4[i], mC4[i], rC4[i], mC4_tilde[i], rC4_tilde[i]);
+            fprint_binary(f, iC4[i]);
+            fprint_binary(f, sC4[i]);
+            fprint_binary(f, mC4[i]);
+            fprint_binary(f, rC4[i]);
+            fprint_binary(f, mC4_tilde[i]);
+            fprint_binary(f, rC4_tilde[i]);
         }
+        fesetround(FE_TONEAREST);
 
         e1_max = fmax(e1_max, e1_rate);
         e1_min = fmin(e1_min, e1_rate);
@@ -277,8 +320,32 @@ int main(int argc, char **argv)
         end2 - start2, end3 - start3, end4 - start4, end5 - start5, 0.25 * (end6 - start6));
     fclose(fp1);
 
-    mat_cr_is(mC1_tilde, rC1_tilde, mC2_tilde, rC2_tilde, iAp, sAp, iBp, sBp, n);
-    mat_cr_is(mC3_tilde, rC3_tilde, mC4_tilde, rC4_tilde, iAm, sAm, iBm, sBm, n);
+    for (int i = 0; i < N; i ++)
+    {
+        double c_power1 = c_exp_min + ((double)rand() / RAND_MAX) * (c_exp_max - c_exp_min);
+        double c1 = ((double)rand() / RAND_MAX) * pow(10, c_power1);   
+
+        double c_power2 = c_exp_min + ((double)rand() / RAND_MAX) * (c_exp_max - c_exp_min);
+        double c2 =  - ((double)rand() / RAND_MAX) * pow(10, c_power2);   
+
+        double c_power3 = c_exp_min + ((double)rand() / RAND_MAX) * (c_exp_max - c_exp_min);
+        double c3 = ((double)rand() / RAND_MAX) * pow(10, c_power3);   
+
+        double c_power4 = c_exp_min + ((double)rand() / RAND_MAX) * (c_exp_max - c_exp_min);
+        double c4 =  - ((double)rand() / RAND_MAX) * pow(10, c_power4);   
+
+        mAp[i] = c1;
+        rAp[i] = FP_CR(c1).radius;
+        mAm[i] = c2;
+        rAm[i] = FP_CR(c2).radius;
+        mBp[i] = c3;
+        rBp[i] = FP_CR(c3).radius;
+        mBm[i] = c4;
+        rBm[i] = FP_CR(c4).radius;
+    }
+
+    mat_cr_is(mAp, rAp, mBp, rBp, iAp, sAp, iBp, sBp, n);
+    mat_cr_is(mAm, rAm, mBm, rBm, iAm, sAm, iBm, sBm, n);
 
     ref1_pp(iAp, sAp, iBp, sBp, iC1, sC1, n);
     ref2_mm(iAm, sAm, iBm, sBm, iC2, sC2, n);
@@ -287,19 +354,19 @@ int main(int argc, char **argv)
 
     // calculation
     double start7 = get_time_ms();
-    int_mat_mult(mC1_tilde, rC1_tilde, mC2_tilde, rC2_tilde, mC1, rC1, n);
+    int_mat_mult(mAp, rAp, mBp, rBp, mC1, rC1, n);
     double end7 = get_time_ms();
 
     double start8 = get_time_ms();
-    int_mat_mult(mC3_tilde, rC3_tilde, mC4_tilde, rC4_tilde, mC2, rC2, n);
+    int_mat_mult(mAm, rAm, mBm, rBm, mC2, rC2, n);
     double end8 = get_time_ms();
 
     double start9 = get_time_ms();
-    int_mat_mult(mC1_tilde, rC1_tilde, mC4_tilde, rC4_tilde, mC3, rC3, n);
+    int_mat_mult(mAp, rAp, mBm, rBm, mC3, rC3, n);
     double end9 = get_time_ms();
 
     double start10 = get_time_ms();
-    int_mat_mult(mC3_tilde, rC3_tilde, mC2_tilde, rC2_tilde, mC4, rC4, n);
+    int_mat_mult(mAm, rAm, mBp, rBp, mC4, rC4, n);
     double end10 = get_time_ms();
 
     // restore
@@ -314,10 +381,10 @@ int main(int argc, char **argv)
     double start11 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
-        mC1_tilde[i] = CR_FP6(C1[i]);
-        mC2_tilde[i] = CR_FP6(C2[i]);
-        mC3_tilde[i] = CR_FP6(C3[i]);
-        mC4_tilde[i] = CR_FP6(C4[i]);             
+        mC1_tilde[i] = CR_FP5(C1[i]);
+        mC2_tilde[i] = CR_FP5(C2[i]);
+        mC3_tilde[i] = CR_FP5(C3[i]);
+        mC4_tilde[i] = CR_FP5(C4[i]);             
     }
     double end11 = get_time_ms();
     
@@ -366,26 +433,52 @@ int main(int argc, char **argv)
         double r4_rate = rC4_tilde[i] / rC4[i];
 
         // check inclusion
-        if (iC1[i] < mC1[i] - rC1[i] || sC1[i] > mC1[i] + rC1[i] || mC1_tilde[i] - rC1_tilde[i] > iC1[i] || mC1_tilde[i] + rC1_tilde[i] < sC1[i])
-        {
-            fprintf(f2, "Error n = %d int_mat_mult C1[%d]\niC1 = %.10f sC1 = %.10f\ninf1 = %.10f sup1 = %.10f\ninf1_tilde = %.10f sup1_tilde = %.10f\n",
-                 n, i, iC1[i], sC1[i], mC1[i] - rC1[i], mC1[i] + rC1[i], mC1_tilde[i] - rC1_tilde[i], mC1_tilde[i] - rC1_tilde[i]);
+        fesetround(FE_UPWARD);
+        if (iC1[i] + rC1[i] < mC1[i] || sC1[i] > mC1[i] + rC1[i] || mC1_tilde[i] > iC1[i] + rC1_tilde[i] || mC1_tilde[i] + rC1_tilde[i] < sC1[i])
+         {
+            fprintf(f2, "Error n = %d int_mat_mult C1[%d]\niC1 = %.10f sC1 = %.10f\nmC1 = %.10f rC1 = %.10f\nmC1_tilde = %.10f rC1_tilde = %.10f\n",
+                 n, i, iC1[i], sC1[i], mC1[i], rC1[i], mC1_tilde[i], rC1_tilde[i]);
+            fprint_binary(f2, iC1[i]);
+            fprint_binary(f2, sC1[i]);
+            fprint_binary(f2, mC1[i]);
+            fprint_binary(f2, rC1[i]);
+            fprint_binary(f2, mC1_tilde[i]);
+            fprint_binary(f2, rC1_tilde[i]);
         }
-        if (iC2[i] < mC2[i] - rC2[i] || sC2[i] > mC2[i] + rC2[i] || mC2_tilde[i] - rC2_tilde[i] > iC2[i] || mC2_tilde[i] + rC2_tilde[i] < sC2[i])
+        if (iC2[i] + rC2[i] < mC2[i] || sC2[i] > mC2[i] + rC2[i] || mC2_tilde[i] > iC2[i] + rC2_tilde[i] || mC2_tilde[i] + rC2_tilde[i] < sC2[i])
         {
-            fprintf(f2, "Error n = %d int_mat_mult C2[%d]\niC2 = %.10f sC2 = %.10f\ninf2 = %.10f sup2 = %.10f\ninf2_tilde = %.10f sup2_tilde = %.10f\n", 
-                 n, i, iC2[i], sC2[i], mC2[i] - rC2[i], mC2[i] + rC2[i], mC2_tilde[i] - rC2_tilde[i], mC2_tilde[i] - rC2_tilde[i]);
+            fprintf(f2, "Error n = %d int_mat_mult C2[%d]\niC2 = %.10f sC2 = %.10f\nmC2 = %.10f rC2 = %.10f\nmC2_tilde = %.10f rC2_tilde = %.10f\n", 
+                 n, i, iC2[i], sC2[i], mC2[i], rC2[i], mC2_tilde[i], rC2_tilde[i]);
+            fprint_binary(f2, iC2[i]);
+            fprint_binary(f2, sC2[i]);
+            fprint_binary(f2, mC2[i]);
+            fprint_binary(f2, rC2[i]);
+            fprint_binary(f2, mC2_tilde[i]);
+            fprint_binary(f2, rC2_tilde[i]);
         }
-        if (iC3[i] < mC3[i] - rC3[i] || sC3[i] > mC3[i] + rC3[i] || mC3_tilde[i] - rC3_tilde[i] > iC3[i] || mC3_tilde[i] + rC3_tilde[i] < sC3[i])
+        if (iC3[i] + rC3[i] < mC3[i] || sC3[i] > mC3[i] + rC3[i] || mC3_tilde[i] > iC3[i] + rC3_tilde[i] || mC3_tilde[i] + rC3_tilde[i] < sC3[i])
         {
-            fprintf(f2, "Error n = %d int_mat_mult C3[%d]\niC3 = %.10f sC3 = %.10f\ninf3 = %.10f sup3 = %.10f\ninf3_tilde = %.10f sup3_tilde = %.10f\n",
-                 n, i, iC3[i], sC3[i], mC3[i] - rC3[i], mC3[i] + rC3[i], mC3_tilde[i] - rC3_tilde[i], mC3_tilde[i] + rC3_tilde[i]);
+            fprintf(f2, "Error n = %d int_mat_mult C3[%d]\niC3 = %.10f sC3 = %.10f\nmC3 = %.10f rC3 = %.10f\nmC3_tilde = %.10f rC3_tilde = %.10f\n",
+                 n, i, iC3[i], sC3[i], mC3[i], rC3[i], mC3_tilde[i], rC3_tilde[i]);
+            fprint_binary(f2, iC3[i]);
+            fprint_binary(f2, sC3[i]);
+            fprint_binary(f2, mC3[i]);
+            fprint_binary(f2, rC3[i]);
+            fprint_binary(f2, mC3_tilde[i]);
+            fprint_binary(f2, rC3_tilde[i]);
         }
-        if (iC4[i] < mC4[i] - rC4[i] || sC4[i] > mC4[i] + rC4[i] || mC4_tilde[i] - rC4_tilde[i] > iC4[i] || mC4_tilde[i] + rC4_tilde[i] < sC4[i])
+        if (iC4[i] + rC4[i] < mC4[i] || sC4[i] > mC4[i] + rC4[i] || mC4_tilde[i] > iC4[i] + rC4_tilde[i] || mC4_tilde[i] + rC4_tilde[i] < sC4[i])
         {
-            fprintf(f2, "Error n = %d int_mat_mult C4[%d]\niC4 = %.10f sC4 = %.10f\ninf4 = %.10f sup4 = %.10f\ninf4_tilde = %.10f sup4_tilde = %.10f\n",
-                 n, i, iC4[i], sC4[i], mC4[i] - rC4[i], mC4[i] + rC4[i], mC4_tilde[i] - rC4_tilde[i], mC4_tilde[i] - rC4_tilde[i]);
+            fprintf(f2, "Error n = %d int_mat_mult C4[%d]\niC4 = %.10f sC4 = %.10f\nmC4 = %.10f rC4 = %.10f\nmC4_tilde = %.10f rC4_tilde = %.10f\n",
+                 n, i, iC4[i], sC4[i], mC4[i], rC4[i], mC4_tilde[i], rC4_tilde[i]);
+            fprint_binary(f2, iC4[i]);
+            fprint_binary(f2, sC4[i]);
+            fprint_binary(f2, mC4[i]);
+            fprint_binary(f2, rC4[i]);
+            fprint_binary(f2, mC4_tilde[i]);
+            fprint_binary(f2, rC4_tilde[i]);
         }
+        fesetround(FE_TONEAREST);
 
         e1_max = fmax(e1_max, e1_rate);
         e1_min = fmin(e1_min, e1_rate);

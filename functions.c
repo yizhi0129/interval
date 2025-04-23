@@ -156,9 +156,9 @@ void ref2_mm(double *iA, double *sA, double *iB, double *sB, double *iC, double 
 void ref3_pm(double *iA, double *sA, double *iB, double *sB, double *iC, double *sC, int n)
 {
     fesetround(FE_DOWNWARD);
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, iA, n, sB, n, 0, iC, n); // iC = rnd_down(iA * sB)
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, sA, n, iB, n, 0, iC, n); // iC = rnd_down(sA * iB)
     fesetround(FE_UPWARD);
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, sA, n, iB, n, 0, sC, n); // sC = rnd_up(sA * iB)
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, iA, n, sB, n, 0, sC, n); // sC = rnd_up(iA * sB)
     fesetround(FE_TONEAREST);
 }
 
@@ -166,8 +166,8 @@ void ref3_pm(double *iA, double *sA, double *iB, double *sB, double *iC, double 
 void ref4_mp(double *iA, double *sA, double *iB, double *sB, double *iC, double *sC, int n)
 {
     fesetround(FE_DOWNWARD);
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, sA, n, iB, n, 0, iC, n); // iC = rnd_down(sA * iB)
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, iA, n, sB, n, 0, iC, n); // iC = rnd_down(iA * sB)
     fesetround(FE_UPWARD);
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, iA, n, sB, n, 0, sC, n); // sC = rnd_up(iA * sB)
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, sA, n, iB, n, 0, sC, n); // sC = rnd_up(sA * iB)
     fesetround(FE_TONEAREST);
 }
