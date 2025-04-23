@@ -47,6 +47,9 @@ int main(int argc, char **argv)
     char res22[64];
     char res23[64];
     char res24[64];
+    char dil1[64];
+    char dil2[64];
+
     sprintf(file1, "matprod_time1_%d.txt", n);
     sprintf(file2, "matprod_time2_%d.txt", n);
     sprintf(res11, "C1_1_%d.txt", n);
@@ -57,6 +60,8 @@ int main(int argc, char **argv)
     sprintf(res22, "C2_2_%d.txt", n);
     sprintf(res23, "C3_2_%d.txt", n);
     sprintf(res24, "C4_2_%d.txt", n);
+    sprintf(dil1, "dil_1_%d.txt", n);
+    sprintf(dil2, "dil_2_%d.txt", n);
 
     double *mAp = malloc(N * sizeof(double));
     double *rAp = malloc(N * sizeof(double));
@@ -215,6 +220,8 @@ int main(int argc, char **argv)
 
     FILE *f = fopen("err1.txt", "a");
 
+    FILE *d1 = fopen(dil1, "a");
+
     for (int i = 0; i < N; i ++)
     {
         double e1 = rC1[i] / mC1[i];
@@ -236,6 +243,10 @@ int main(int argc, char **argv)
         double r2_rate = rC2_tilde[i] / rC2[i];
         double r3_rate = rC3_tilde[i] / rC3[i];
         double r4_rate = rC4_tilde[i] / rC4[i];
+
+        fprintf(d1, "%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%d\n", e1_rate, r1_rate, 
+            e2_rate, r2_rate, e3_rate, r3_rate, e4_rate, r4_rate, i);
+
 
         // check inclusion
         fesetround(FE_UPWARD);
@@ -303,6 +314,8 @@ int main(int argc, char **argv)
         r4_max = fmax(r4_max, r4_rate);
         r4_min = fmin(r4_min, r4_rate);
     }
+
+    fclose(d1);
 
     fprintf(result1[0], "%.6e\t%.6e\t%.6e\t%.6e\n", e1_max, e1_min, r1_max, r1_min);
     fprintf(result1[1], "%.6e\t%.6e\t%.6e\t%.6e\n", e2_max, e2_min, r2_max, r2_min);
@@ -410,6 +423,8 @@ int main(int argc, char **argv)
 
     FILE *f2 = fopen("err2.txt", "a");
 
+    FILE *d2 = fopen(dil2, "a");
+
     for (int i = 0; i < N; i ++)
     {
         double e1 = rC1[i] / mC1[i];
@@ -431,6 +446,9 @@ int main(int argc, char **argv)
         double r2_rate = rC2_tilde[i] / rC2[i];
         double r3_rate = rC3_tilde[i] / rC3[i];
         double r4_rate = rC4_tilde[i] / rC4[i];
+
+        fprintf(d2, "%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%d\n", e1_rate, r1_rate, 
+            e2_rate, r2_rate, e3_rate, r3_rate, e4_rate, r4_rate, i);
 
         // check inclusion
         fesetround(FE_UPWARD);
@@ -498,6 +516,8 @@ int main(int argc, char **argv)
         r4_max = fmax(r4_max, r4_rate);
         r4_min = fmin(r4_min, r4_rate);
     }
+
+    fclose(d2);
 
     fprintf(result2[0], "%.6e\t%.6e\t%.6e\t%.6e\n", e1_max, e1_min, r1_max, r1_min);
     fprintf(result2[1], "%.6e\t%.6e\t%.6e\t%.6e\n", e2_max, e2_min, r2_max, r2_min);
