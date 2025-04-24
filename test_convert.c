@@ -43,6 +43,7 @@ int main(int argc, char **argv)
     FP_INT *CR_c5 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *CR_c6 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *CR_c1b = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *CR_c1_adj = malloc(2 * N * sizeof(FP_INT));
 
     C_R *CR_cr1 = malloc(2 * N * sizeof(C_R));
     C_R *CR_cr2 = malloc(2 * N * sizeof(C_R));
@@ -51,6 +52,7 @@ int main(int argc, char **argv)
     C_R *CR_cr5 = malloc(2 * N * sizeof(C_R));
     C_R *CR_cr6 = malloc(2 * N * sizeof(C_R));
     C_R *CR_cr1b = malloc(2 * N * sizeof(C_R));
+    C_R *CR_cr1_adj = malloc(2 * N * sizeof(C_R));
 
     FP_INT *IS_c1 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *IS_c2 = malloc(2 * N * sizeof(FP_INT));
@@ -149,6 +151,13 @@ int main(int argc, char **argv)
         CR_c1b[i] = CR_FP1b(test_int[i]);
     }
     double end1b = get_time_ms();
+
+    double start1_adj = get_time_ms();
+    for (int i = 0; i < 2 * N; i ++)
+    {
+        CR_c1_adj[i] = CR_FP1_adj(test_int[i]);
+    }
+    double end1_adj = get_time_ms();
   
     double start111 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
@@ -202,6 +211,7 @@ int main(int argc, char **argv)
         CR_cr5[i] = FP_CR(CR_c5[i]);
         CR_cr6[i] = FP_CR(CR_c6[i]);
         CR_cr1b[i] = FP_CR(CR_c1b[i]);
+        CR_cr1_adj[i] = FP_CR(CR_c1_adj[i]);
         IS_cr1[i] = FP_CR(IS_c1[i]);
         IS_cr2[i] = FP_CR(IS_c2[i]);
         IS_cr3[i] = FP_CR(IS_c3[i]);
@@ -217,9 +227,10 @@ int main(int argc, char **argv)
         perror("Failed to open convert_time.txt");
         return 1;
     }
-    fprintf(fp, "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t(ms)\n", 
-        end1 - start1, end2 - start2, end3 - start3, end4 - start4, (end0 - start0) / 13.0, 
-        end111 - start111, end222 - start222, end333 - start333, end444 - start444, end5 - start5, end555 - start555, end6 - start6, end666 - start666, end1b - start1b); 
+    fprintf(fp, "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t(ms)\n", 
+        end1 - start1, end2 - start2, end3 - start3, end4 - start4, (end0 - start0) / 14.0, 
+        end111 - start111, end222 - start222, end333 - start333, end444 - start444, end5 - start5, end555 - start555, 
+        end6 - start6, end666 - start666, end1b - start1b, end1_adj - start1_adj); 
     fclose(fp);  
 
     FILE *fp2 = fopen("CR_FPINT_res.txt", "a");
@@ -262,6 +273,11 @@ int main(int argc, char **argv)
         fprint_binary(fp2, CR_c1b[i]);
         fprint_binary(fp2, CR_cr1b[i].center);
         fprint_binary(fp2, CR_cr1b[i].radius);
+        fprintf(fp2, "\n");
+        fprintf(fp2, "CR1adj:\n");
+        fprint_binary(fp2, CR_c1_adj[i]);
+        fprint_binary(fp2, CR_cr1_adj[i].center);
+        fprint_binary(fp2, CR_cr1_adj[i].radius);
         fprintf(fp2, "\n");
     }
 
@@ -349,6 +365,18 @@ int main(int argc, char **argv)
             fprint_binary(fp2, CR_c1b[i]);
             fprint_binary(fp2, CR_cr1b[i].center);
             fprint_binary(fp2, CR_cr1b[i].radius);
+        }
+
+        if (CR_c1_adj[i] - 2 * CR_cr1_adj[i].radius > test_int[i].center - test_int[i].radius || 
+            CR_c1_adj[i] + 2 * CR_cr1_adj[i].radius < test_int[i].center + test_int[i].radius)
+        {
+            fprintf(fp2, "CR_c1_adj = [%.10e,\t%.10e]\t", CR_c1_adj[i] - CR_cr1_adj[i].radius, CR_c1_adj[i] + CR_cr1_adj[i].radius);
+            fprintf(fp2, "Error\n");
+            fprint_binary(fp2, test_int[i].center);
+            fprint_binary(fp2, test_int[i].radius);
+            fprint_binary(fp2, CR_c1_adj[i]);
+            fprint_binary(fp2, CR_cr1_adj[i].center);
+            fprint_binary(fp2, CR_cr1_adj[i].radius);
         }
     }
     fclose(fp2);
