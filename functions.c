@@ -9,9 +9,10 @@
 
 #define EPS set_pow2(-53)
 #define REALMIN set_pow2(-1022)
+#define ITERMAX 20
 
 
-// an old version whitch does not work 
+// an old version which does not work 
 void mult_old(double *mA, double *mB, double *rA, double *rB, int k, double *mC, double *rC, double *Id, double *Ones)
 {
 	fesetround(FE_TONEAREST);
@@ -170,4 +171,62 @@ void ref4_mp(double *iA, double *sA, double *iB, double *sB, double *iC, double 
     fesetround(FE_UPWARD);
     cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, sA, n, iB, n, 0, sC, n); // sC = rnd_up(sA * iB)
     fesetround(FE_TONEAREST);
+}
+
+
+C_R inverse(C_R cr_x)
+{
+    fesetround(FE_DOWNWARD);
+	double c1 = ((-1) / (-fabs(cr_x.center) - cr_x.radius));
+	fesetround(FE_UPWARD);
+	double c2 = ((-1)/(-fabs(cr_x.center) + cr_x.radius));
+	double c = (c1 + 0.5 * (c2 - c1));
+	cr_x.radius = (c - c1);
+	fesetround(FE_TONEAREST);
+    int s = get_sign_bit(cr_x.center);
+    cr_x.center = set_sign_bit(c, s);
+    return cr_x;
+}
+
+
+C_R intersection(C_R x, C_R y)
+{
+    fesetround(FE_DOWNWARD);
+    double inf = fmax(x.center - x.radius, y.center - y.radius);
+    fesetround(FE_UPWARD);
+    double sup = fmin(x.center + x.radius, y.center + y.radius);  
+    if (inf > sup)
+    {
+        printf("Error: intersection is empty!\n");
+        return (C_R){0, 0};
+    }
+    double center = (inf + sup) / 2;
+    double radius = center - inf;
+    fesetround(FE_TONEAREST);   
+    C_R cr = {center, radius};
+    return cr;
+}
+
+
+FP_INT newton(C_R cr_x)
+{   
+    for (int i = 0; i < ITERMAX; i ++)
+    {
+        double c1 = cr_x.center;
+        double r1 = cr_x.radius;
+        C_R cr_inv = inverse((C_R){c1, r1});
+        double c2 = c1 - (c1 * c1 - 2) / 2 * cr_inv.center;
+        double r2 = fabs((c1 * c1 - 2) / 2 * cr_inv.radius);
+        cr_x = intersection((C_R){c1, r1}, (C_R){c2, r2});
+        printf("\niteration %d:\nc = ",i);
+        print_binary(cr_x.center);
+        printf("\nr = ");
+        print_binary(cr_x.radius);
+        printf("\n\n");
+        if (fabs(cr_x.center - c1) <= EPS && fabs(cr_x.radius) <= 2 * EPS)
+        {
+            break;
+        }
+    }
+    return CR_FP1_adj(cr_x);
 }
