@@ -9,7 +9,9 @@
 
 #define EPS set_pow2(-53)
 #define REALMIN set_pow2(-1022)
-#define ITERMAX 20
+
+#define ITERMAX 15
+#define TOLERANCE set_pow2(-52)
 
 
 // an old version which does not work 
@@ -210,6 +212,7 @@ C_R intersection(C_R x, C_R y)
 
 FP_INT newton(C_R cr_x)
 {   
+    printf("FP_INT Newton:\n");
     for (int i = 0; i < ITERMAX; i ++)
     {
         double c1 = cr_x.center;
@@ -223,10 +226,35 @@ FP_INT newton(C_R cr_x)
         printf("\nr = ");
         print_binary(cr_x.radius);
         printf("\n\n");
-        if (fabs(cr_x.center - c1) <= EPS && fabs(cr_x.radius) <= 2 * EPS)
+        if (fabs(cr_x.center - c1) <= TOLERANCE && fabs(cr_x.radius) <= TOLERANCE)
         {
             break;
         }
     }
     return CR_FP1_adj(cr_x);
+}
+
+
+C_R newton_ref(C_R cr_x)
+{   
+    printf("C_R Newton:\n");
+    for (int i = 0; i < ITERMAX; i ++)
+    {
+        double c1 = cr_x.center;
+        double r1 = cr_x.radius;
+        C_R cr_inv = inverse((C_R){c1, r1});
+        double c2 = c1 - (c1 * c1 - 2) / 2 * cr_inv.center;
+        double r2 = fabs((c1 * c1 - 2) / 2 * cr_inv.radius);
+        cr_x = intersection((C_R){c1, r1}, (C_R){c2, r2});
+        printf("\niteration %d:\nc = ",i);
+        print_binary(cr_x.center);
+        printf("\nr = ");
+        print_binary(cr_x.radius);
+        printf("\n\n");
+        if (fabs(cr_x.center - c1) <= EPS && cr_x.radius <= TOLERANCE)
+        {
+            break;
+        }
+    }
+    return cr_x;
 }

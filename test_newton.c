@@ -7,8 +7,6 @@
 #include <fenv.h>
 
 
-#define N 100
-
 double get_time_ms() 
 {
     struct timeval tv;
@@ -34,8 +32,23 @@ void fprint_binary(FILE *fp, double x)
 
 int main(int argc, char **argv)
 {
+    int N = atoi(argv[1]);
+    if (N <= 0)
+    {
+        printf("Please input a positive integer.\n");
+        return 0;
+    }
+
     C_R *test = (C_R*)malloc(sizeof(C_R) * N);
     FP_INT *res = (FP_INT *)malloc(sizeof(FP_INT) * N);
+    C_R *ref = (C_R *)malloc(sizeof(C_R) * N);
+
+    char file1[64];
+    char file2[64];
+
+    sprintf(file1, "newton_res_%d.txt", N);
+    sprintf(file2, "newton_time_%d.txt", N);
+
     srand(get_time_ms());
     for (int i = 0; i < N; i ++)
     {
@@ -47,29 +60,37 @@ int main(int argc, char **argv)
         fesetround(FE_TONEAREST);
     }
 
-    double start = get_time_ms();
+    double start1 = get_time_ms();
+    for (int i = 0; i < N; i ++)
+    {
+        ref[i] = newton_ref(test[i]);
+    }
+    double end1 = get_time_ms();
+
+    double start2 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
         res[i] = newton(test[i]);
     }
-    double end = get_time_ms();
+    double end2 = get_time_ms();
     
-    FILE *fp = fopen("newton_res.txt", "a");
-    fprintf(fp, "sqrt(2) =\t");
-    fprint_binary(fp, sqrt(2));
+    FILE *fp1 = fopen(file1, "a");
+    fprintf(fp1, "sqrt(2) =\t");
+    fprint_binary(fp1, sqrt(2));
     for (int i = 0; i < N; i ++)
     {
-        fprintf(fp, "res[%d] =\t", i);
-        fprint_binary(fp, res[i]);
+        fprintf(fp1, "res[%d] =\t", i);
+        fprint_binary(fp1, res[i]);
     }
-    fclose(fp);
+    fclose(fp1);
 
-    FILE *fp2 = fopen("newton_time.txt", "a");
-    fprintf(fp2, "%.10e ms\n", end - start);
+    FILE *fp2 = fopen(file2, "a");
+    fprintf(fp2, "%.10e\t%.10e\t%.10e\tms\n", end1 - start1, end2 - start2, (end1 - start1) - (end2 - start2));
     fclose(fp2);
 
     free(test);
     free(res);
+    free(ref);
 
     return 0;
 }

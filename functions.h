@@ -3,6 +3,7 @@
 
 #include "convert.h"
 
+// old version of matrix multiplication: does not work
 void mult_old(double *mA, double *mB, double *rA, double *rB, int k, double *mC, double *rC, double *Id, double *Ones);
 
 void int_mat_mult(double *mA, double *rA, double *mB, double *rB, double *mC, double *rC, int n);
@@ -20,5 +21,6 @@ C_R inverse(C_R cr_x);
 C_R intersection(C_R cr_x, C_R cr_y);
 
 FP_INT newton(C_R cr_x);
+C_R newton_ref(C_R cr_x);
 
 #endif
