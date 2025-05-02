@@ -8,6 +8,8 @@
 
 #define N 20000
 
+#define MAX_RATE 1e+300
+
 double get_time_ms() 
 {
     struct timeval tv;
@@ -44,6 +46,8 @@ int main(int argc, char **argv)
     FP_INT *CR_c6 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *CR_c1b = malloc(2 * N * sizeof(FP_INT));
     FP_INT *CR_c1_adj = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *CR_c1_adjbis = malloc(2 * N * sizeof(FP_INT));
+    FP_INT *CR_c1_adjter = malloc(2 * N * sizeof(FP_INT));
 
     C_R *CR_cr1 = malloc(2 * N * sizeof(C_R));
     C_R *CR_cr2 = malloc(2 * N * sizeof(C_R));
@@ -53,6 +57,8 @@ int main(int argc, char **argv)
     C_R *CR_cr6 = malloc(2 * N * sizeof(C_R));
     C_R *CR_cr1b = malloc(2 * N * sizeof(C_R));
     C_R *CR_cr1_adj = malloc(2 * N * sizeof(C_R));
+    C_R *CR_cr1_adjbis = malloc(2 * N * sizeof(C_R));
+    C_R *CR_cr1_adjter = malloc(2 * N * sizeof(C_R));
 
     FP_INT *IS_c1 = malloc(2 * N * sizeof(FP_INT));
     FP_INT *IS_c2 = malloc(2 * N * sizeof(FP_INT));
@@ -72,6 +78,20 @@ int main(int argc, char **argv)
     const double c_exp_max = 9.0;
     const double r_exp_min = -10.0;
     const double r_exp_max = -3.0;
+
+    double e1_max = 0;
+    double e1_min = MAX_RATE;
+    double e2_max = 0;
+    double e2_min = MAX_RATE;
+    double e3_max = 0;
+    double e3_min = MAX_RATE;
+
+    double r1_max = 0;
+    double r1_min = MAX_RATE;
+    double r2_max = 0;
+    double r2_min = MAX_RATE;
+    double r3_max = 0;
+    double r3_min = MAX_RATE;
 
     srand(get_time_ms());    
 
@@ -158,6 +178,20 @@ int main(int argc, char **argv)
         CR_c1_adj[i] = CR_FP1_adj(test_int[i]);
     }
     double end1_adj = get_time_ms();
+
+    double start1_adjbis = get_time_ms();
+    for (int i = 0; i < 2 * N; i ++)
+    {
+        CR_c1_adjbis[i] = CR_FP1_adjbis(test_int[i]);
+    }
+    double end1_adjbis = get_time_ms();
+
+    double start1_adjter = get_time_ms();
+    for (int i = 0; i < 2 * N; i ++)
+    {
+        CR_c1_adjter[i] = CR_FP1_adjter(test_int[i]);
+    }
+    double end1_adjter = get_time_ms();
   
     double start111 = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
@@ -212,6 +246,8 @@ int main(int argc, char **argv)
         CR_cr6[i] = FP_CR(CR_c6[i]);
         CR_cr1b[i] = FP_CR(CR_c1b[i]);
         CR_cr1_adj[i] = FP_CR(CR_c1_adj[i]);
+        CR_cr1_adjbis[i] = FP_CR(CR_c1_adjbis[i]);
+        CR_cr1_adjter[i] = FP_CR(CR_c1_adjter[i]);
         IS_cr1[i] = FP_CR(IS_c1[i]);
         IS_cr2[i] = FP_CR(IS_c2[i]);
         IS_cr3[i] = FP_CR(IS_c3[i]);
@@ -227,10 +263,11 @@ int main(int argc, char **argv)
         perror("Failed to open convert_time.txt");
         return 1;
     }
-    fprintf(fp, "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t(ms)\n", 
-        end1 - start1, end2 - start2, end3 - start3, end4 - start4, (end0 - start0) / 14.0, 
+    fprintf(fp, "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t(ms)\n", 
+        end1 - start1, end2 - start2, end3 - start3, end4 - start4, (end0 - start0) / 16.0, 
         end111 - start111, end222 - start222, end333 - start333, end444 - start444, end5 - start5, end555 - start555, 
-        end6 - start6, end666 - start666, end1b - start1b, end1_adj - start1_adj); 
+        end6 - start6, end666 - start666, end1b - start1b, end1_adj - start1_adj, 
+        end1_adjbis - start1_adjbis, end1_adjter - start1_adjter); 
     fclose(fp);  
 
     FILE *fp2 = fopen("CR_FPINT_res.txt", "a");
@@ -240,6 +277,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    FILE *fpdil = fopen("dilat.txt", "a");
     for(int i = 0; i < 2 * N; i += 1000)
     {
         fprintf(fp2, "test_int[%d] = [%.10e,\t%.10e]\n", i, test_int[i].center - test_int[i].radius, test_int[i].center + test_int[i].radius);
@@ -279,7 +317,43 @@ int main(int argc, char **argv)
         fprint_binary(fp2, CR_cr1_adj[i].center);
         fprint_binary(fp2, CR_cr1_adj[i].radius);
         fprintf(fp2, "\n");
+        fprintf(fp2, "CR1adjbis:\n");
+        fprint_binary(fp2, CR_c1_adjbis[i]);
+        fprint_binary(fp2, CR_cr1_adjbis[i].center);
+        fprint_binary(fp2, CR_cr1_adjbis[i].radius);
+        fprintf(fp2, "\n");
+        fprintf(fp2, "CR1adjter:\n");
+        fprint_binary(fp2, CR_c1_adjter[i]);
+        fprint_binary(fp2, CR_cr1_adjter[i].center);
+        fprint_binary(fp2, CR_cr1_adjter[i].radius);
+        fprintf(fp2, "\n");
+
+        double r1 = 2 * CR_cr1_adj[i].radius / test_int[i].radius;
+        double r2 = 3 * CR_cr1_adjbis[i].radius / test_int[i].radius;
+        double r3 = 4 * CR_cr1_adjter[i].radius / test_int[i].radius;
+
+        double e1 = test_int[i].radius / test_int[i].center;
+        double e1_rate = 2 * CR_cr1_adj[i].radius / CR_cr1_adj[i].center / e1;
+        double e2_rate = 3 * CR_cr1_adjbis[i].radius / CR_cr1_adjbis[i].center / e1;
+        double e3_rate = 4 * CR_cr1_adjter[i].radius / CR_cr1_adjter[i].center / e1;
+
+        r1_max = fmax(r1_max, r1);
+        r1_min = fmin(r1_min, r1);
+        r2_max = fmax(r2_max, r2);
+        r2_min = fmin(r2_min, r2);
+        r3_max = fmax(r3_max, r3);
+        r3_min = fmin(r3_min, r3);
+        e1_max = fmax(e1_max, e1_rate);
+        e1_min = fmin(e1_min, e1_rate);
+        e2_max = fmax(e2_max, e2_rate);
+        e2_min = fmin(e2_min, e2_rate);
+        e3_max = fmax(e3_max, e3_rate);
+        e3_min = fmin(e3_min, e3_rate);
     }
+
+    fprintf(fpdil, "%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\n", 
+        e1_max, e1_min, r1_max, r1_min, e2_max, e2_min, r2_max, r2_min, e3_max, e3_min, r3_max, r3_min);
+    fclose(fpdil);
 
     for (int i = 0; i < 2 * N; i ++)
     {   
@@ -377,6 +451,30 @@ int main(int argc, char **argv)
             fprint_binary(fp2, CR_c1_adj[i]);
             fprint_binary(fp2, CR_cr1_adj[i].center);
             fprint_binary(fp2, CR_cr1_adj[i].radius);
+        }
+
+        if (CR_c1_adjbis[i] - 3 * CR_cr1_adjbis[i].radius > test_int[i].center - test_int[i].radius || 
+            CR_c1_adjbis[i] + 3 * CR_cr1_adjbis[i].radius < test_int[i].center + test_int[i].radius)
+        {
+            fprintf(fp2, "CR_c1_adjbis = [%.10e,\t%.10e]\t", CR_c1_adjbis[i] - CR_cr1_adjbis[i].radius, CR_c1_adjbis[i] + CR_cr1_adjbis[i].radius);
+            fprintf(fp2, "Error\n");
+            fprint_binary(fp2, test_int[i].center);
+            fprint_binary(fp2, test_int[i].radius);
+            fprint_binary(fp2, CR_c1_adjbis[i]);
+            fprint_binary(fp2, CR_cr1_adjbis[i].center);
+            fprint_binary(fp2, CR_cr1_adjbis[i].radius);
+        }
+
+        if (CR_c1_adjter[i] - 4 * CR_cr1_adjter[i].radius > test_int[i].center - test_int[i].radius || 
+            CR_c1_adjter[i] + 4 * CR_cr1_adjter[i].radius < test_int[i].center + test_int[i].radius)
+        {
+            fprintf(fp2, "CR_c1_adjter = [%.10e,\t%.10e]\t", CR_c1_adjter[i] - CR_cr1_adjter[i].radius, CR_c1_adjter[i] + CR_cr1_adjter[i].radius);
+            fprintf(fp2, "Error\n");
+            fprint_binary(fp2, test_int[i].center);
+            fprint_binary(fp2, test_int[i].radius);
+            fprint_binary(fp2, CR_c1_adjter[i]);
+            fprint_binary(fp2, CR_cr1_adjter[i].center);
+            fprint_binary(fp2, CR_cr1_adjter[i].radius);
         }
     }
     fclose(fp2);
@@ -493,6 +591,9 @@ int main(int argc, char **argv)
     free(CR_c5);
     free(CR_c6);
     free(CR_c1b);
+    free(CR_c1_adj);
+    free(CR_c1_adjbis);
+    free(CR_c1_adjter);
 
     free(CR_cr1);
     free(CR_cr2);
@@ -501,6 +602,9 @@ int main(int argc, char **argv)
     free(CR_cr5);
     free(CR_cr6);
     free(CR_cr1b);
+    free(CR_cr1_adj);
+    free(CR_cr1_adjbis);
+    free(CR_cr1_adjter);
 
     free(IS_c1);
     free(IS_c2);

@@ -12,6 +12,7 @@ done
 
 # plot
 gnuplot conv_time.gp
+gnuplot conv_dilat.gp
 
 # count errors
 python3 count_err.py
