@@ -191,20 +191,20 @@ int main(int argc, char **argv)
     double start6 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
-        mC1_tilde[i] = CR_FP1_adj(C1[i]);
-        mC2_tilde[i] = CR_FP1_adj(C2[i]);
-        mC3_tilde[i] = CR_FP1_adj(C3[i]);
-        mC4_tilde[i] = CR_FP1_adj(C4[i]);             
+        mC1_tilde[i] = CR_FP1(C1[i]);
+        mC2_tilde[i] = CR_FP1(C2[i]);
+        mC3_tilde[i] = CR_FP1(C3[i]);
+        mC4_tilde[i] = CR_FP1(C4[i]);             
     }
     double end6 = get_time_ms();
 
     // read r_tilde
     for (int i = 0; i < N; i ++)
     {
-        rC1_tilde[i] = 2 * FP_CR(mC1_tilde[i]).radius;
-        rC2_tilde[i] = 2 * FP_CR(mC2_tilde[i]).radius;
-        rC3_tilde[i] = 2 * FP_CR(mC3_tilde[i]).radius;
-        rC4_tilde[i] = 2 * FP_CR(mC4_tilde[i]).radius; 
+        rC1_tilde[i] = FP_CR(mC1_tilde[i]).radius;
+        rC2_tilde[i] = FP_CR(mC2_tilde[i]).radius;
+        rC3_tilde[i] = FP_CR(mC3_tilde[i]).radius;
+        rC4_tilde[i] = FP_CR(mC4_tilde[i]).radius; 
     }
 
     FILE *result1[4];
@@ -423,20 +423,20 @@ int main(int argc, char **argv)
     double start11 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
-        mC1_tilde[i] = CR_FP1_adj(C1[i]);
-        mC2_tilde[i] = CR_FP1_adj(C2[i]);
-        mC3_tilde[i] = CR_FP1_adj(C3[i]);
-        mC4_tilde[i] = CR_FP1_adj(C4[i]);             
+        mC1_tilde[i] = CR_FP1(C1[i]);
+        mC2_tilde[i] = CR_FP1(C2[i]);
+        mC3_tilde[i] = CR_FP1(C3[i]);
+        mC4_tilde[i] = CR_FP1(C4[i]);             
     }
     double end11 = get_time_ms();
     
     // read r_tilde
     for (int i = 0; i < N; i ++)
     {
-        rC1_tilde[i] = 2 * FP_CR(mC1_tilde[i]).radius;
-        rC2_tilde[i] = 2 * FP_CR(mC2_tilde[i]).radius;
-        rC3_tilde[i] = 2 * FP_CR(mC3_tilde[i]).radius;
-        rC4_tilde[i] = 2 * FP_CR(mC4_tilde[i]).radius; 
+        rC1_tilde[i] = FP_CR(mC1_tilde[i]).radius;
+        rC2_tilde[i] = FP_CR(mC2_tilde[i]).radius;
+        rC3_tilde[i] = FP_CR(mC3_tilde[i]).radius;
+        rC4_tilde[i] = FP_CR(mC4_tilde[i]).radius; 
     }
 
     FILE *result2[4];

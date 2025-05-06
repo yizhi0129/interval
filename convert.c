@@ -483,36 +483,17 @@ FP_INT CR_FP1_adjbis(C_R int_cr)
     int e_r = u2.ieee.exponent - DOUBLE_ULS;
     int p = int_min(e_c - e_r, DOUBLE_E);
     FP_INT c_tilde = int_cr.center;
-    double r_tilde = 0.0;
-    int s = get_sign_bit(int_cr.center);
-    int b = 1 ^ s;
-    double u = set_pow2(e_c - 52);
-    while (true)
+    int s = get_sign_bit(c_tilde);
+    if (p > 0)
     {
-        if (p > 0)
-        {
-            int index = DOUBLE_E - p;
-            c_tilde = truncate_m(c_tilde, index);
-            c_tilde = set_m_bit1(c_tilde, index);
-            r_tilde = set_pow2(e_c - p);
-            b = read_m_bit(int_cr.center, index) ^ s;          
-        }
-        else
-        {
-            c_tilde = set_pow2(e_c - p);
-            c_tilde = set_sign_bit(c_tilde, s);
-            r_tilde = set_pow2(e_c - p);
-        }
-        
-        //compare      
-        if ((2*b-1)*int_cr.center + int_cr.radius + u <= (2*b-1)*c_tilde + 3 * r_tilde) 
-        {
-            break;
-        }
-        else
-        {
-            p --;
-        }
+        int index = DOUBLE_E - p;
+        c_tilde = truncate_m(c_tilde, index);
+        c_tilde = set_m_bit1(c_tilde, index);        
+    }
+    else
+    {
+        c_tilde = set_pow2(e_c - p);
+        c_tilde = set_sign_bit(c_tilde, s);        
     }     
     return c_tilde;
 }
@@ -527,36 +508,17 @@ FP_INT CR_FP1_adjter(C_R int_cr)
     int e_r = u2.ieee.exponent - DOUBLE_ULS;
     int p = int_min(e_c - e_r, DOUBLE_E);
     FP_INT c_tilde = int_cr.center;
-    double r_tilde = 0.0;
-    int s = get_sign_bit(int_cr.center);
-    int b = 1 ^ s;
-    double u = set_pow2(e_c - 52);
-    while (true)
+    int s = get_sign_bit(c_tilde);
+    if (p > 0)
     {
-        if (p > 0)
-        {
-            int index = DOUBLE_E - p;
-            c_tilde = truncate_m(c_tilde, index);
-            c_tilde = set_m_bit1(c_tilde, index);
-            r_tilde = set_pow2(e_c - p);
-            b = read_m_bit(int_cr.center, index) ^ s;          
-        }
-        else
-        {
-            c_tilde = set_pow2(e_c - p);
-            c_tilde = set_sign_bit(c_tilde, s);
-            r_tilde = set_pow2(e_c - p);
-        }
-        
-        //compare      
-        if ((2*b-1)*int_cr.center + int_cr.radius + u <= (2*b-1)*c_tilde + 4 * r_tilde) 
-        {
-            break;
-        }
-        else
-        {
-            p --;
-        }
+        int index = DOUBLE_E - p;
+        c_tilde = truncate_m(c_tilde, index);
+        c_tilde = set_m_bit1(c_tilde, index);        
+    }
+    else
+    {
+        c_tilde = set_pow2(e_c - p);
+        c_tilde = set_sign_bit(c_tilde, s);        
     }     
     return c_tilde;
 }

@@ -231,7 +231,7 @@ FP_INT newton(C_R cr_x)
             break;
         }
     }
-    return CR_FP1_adj(cr_x);
+    return CR_FP1_adjbis(cr_x);
 }
 
 
