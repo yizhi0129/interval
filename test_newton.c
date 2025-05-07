@@ -63,14 +63,14 @@ int main(int argc, char **argv)
     double start1 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
-        ref[i] = newton_ref(test[i]);
+        ref[i] = newton(test[i]);
     }
     double end1 = get_time_ms();
 
     double start2 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
-        res[i] = newton(test[i]);
+        res[i] = CR_FP1_adj(ref[i]);
     }
     double end2 = get_time_ms();
     
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     fclose(fp1);
 
     FILE *fp2 = fopen(file2, "a");
-    fprintf(fp2, "%.10e\t%.10e\t%.10e\tms\n", end1 - start1, end2 - start2, (end1 - start1) - (end2 - start2));
+    fprintf(fp2, "%.10e\t%.10e\tms\n", end1 - start1, end2 - start2);
     fclose(fp2);
 
     free(test);

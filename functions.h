@@ -20,7 +20,6 @@ C_R inverse(C_R cr_x);
 
 C_R intersection(C_R cr_x, C_R cr_y);
 
-FP_INT newton(C_R cr_x);
-C_R newton_ref(C_R cr_x);
+C_R newton(C_R cr_x);
 
 #endif

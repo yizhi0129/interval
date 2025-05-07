@@ -22,5 +22,5 @@ done
 
 gnuplot newton_time.gp
 
-mkdir -p newton_adj_3r
-mv *_100.txt *.png newton_adj_3r
+mkdir -p newton
+mv *_100.txt *.png newton
