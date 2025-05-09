@@ -60,17 +60,22 @@ int main(int argc, char **argv)
         fesetround(FE_TONEAREST);
     }
 
+    for (int i = 0; i < N; i ++)
+    {
+        ref[i] = newton_pr(test[i]);
+    }
+
     double start1 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
-        ref[i] = newton(test[i]);
+        ref[i] = newton_res(test[i]);
     }
     double end1 = get_time_ms();
 
     double start2 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
-        res[i] = CR_FP1_adj(ref[i]);
+        res[i] = CR_FP1_adjbis(ref[i]);
     }
     double end2 = get_time_ms();
     

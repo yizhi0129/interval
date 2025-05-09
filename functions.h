@@ -20,6 +20,7 @@ C_R inverse(C_R cr_x);
 
 C_R intersection(C_R cr_x, C_R cr_y);
 
-C_R newton(C_R cr_x);
+C_R newton_pr(C_R cr_x);
+C_R newton_res(C_R cr_x);
 
 #endif

@@ -211,7 +211,7 @@ C_R intersection(C_R x, C_R y)
 
 
 
-C_R newton(C_R cr_x)
+C_R newton_pr(C_R cr_x)
 {   
     printf("C_R Newton:\n");
     for (int i = 0; i < ITERMAX; i ++)
@@ -222,11 +222,29 @@ C_R newton(C_R cr_x)
         double c2 = c1 - (c1 * c1 - 2) / 2 * cr_inv.center;
         double r2 = fabs((c1 * c1 - 2) / 2 * cr_inv.radius);
         cr_x = intersection((C_R){c1, r1}, (C_R){c2, r2});
-        printf("\niteration %d:\nc = ",i);
+        printf("iteration %d:\nc = ", i + 1);
         print_binary(cr_x.center);
         printf("\nr = ");
         print_binary(cr_x.radius);
-        printf("\n\n");
+        printf("\n");
+        if (fabs(cr_x.center - c1) <= EPS && cr_x.radius <= TOLERANCE)
+        {
+            break;
+        }
+    }
+    return cr_x;
+}
+
+C_R newton_res(C_R cr_x)
+{   
+    for (int i = 0; i < ITERMAX; i ++)
+    {
+        double c1 = cr_x.center;
+        double r1 = cr_x.radius;
+        C_R cr_inv = inverse((C_R){c1, r1});
+        double c2 = c1 - (c1 * c1 - 2) / 2 * cr_inv.center;
+        double r2 = fabs((c1 * c1 - 2) / 2 * cr_inv.radius);
+        cr_x = intersection((C_R){c1, r1}, (C_R){c2, r2});
         if (fabs(cr_x.center - c1) <= EPS && cr_x.radius <= TOLERANCE)
         {
             break;
