@@ -524,6 +524,56 @@ FP_INT CR_FP1_adjter(C_R int_cr)
 }
 
 
+FP_INT_PREC CR_FP_p(C_R int_cr)
+{
+    union ieee754_double u1, u2;
+    u1.d = int_cr.center;
+    u2.d = int_cr.radius;
+    int e_c = u1.ieee.exponent - DOUBLE_ULS;
+    int e_r = u2.ieee.exponent - DOUBLE_ULS;
+    int p = int_min(e_c - e_r, DOUBLE_E);
+    FP_INT c_tilde = int_cr.center;
+    int s = get_sign_bit(c_tilde);
+    if (p > 0)
+    {
+        int index = DOUBLE_E - p;
+        c_tilde = truncate_m(c_tilde, index);
+        c_tilde = set_m_bit1(c_tilde, index);        
+    }
+    else
+    {
+        c_tilde = set_pow2(e_c - p);
+        c_tilde = set_sign_bit(c_tilde, s);        
+    }     
+    FP_INT_PREC result = {c_tilde, p};
+    return result;
+}
+
+FP_INT_PREC CR_FP_mpfr(C_R int_cr)
+{
+    union ieee754_double u1, u2;
+    u1.d = int_cr.center;
+    u2.d = int_cr.radius;
+    int e_c = u1.ieee.exponent - DOUBLE_ULS;
+    int e_r = u2.ieee.exponent - DOUBLE_ULS;
+    int p = int_min(e_c - e_r, DOUBLE_E);
+    FP_INT c_tilde = int_cr.center;
+    int s = get_sign_bit(c_tilde);
+    if (p > 0)
+    {
+        int index = DOUBLE_E - p;
+        // c_tilde = truncate_m(c_tilde, index);
+        c_tilde = set_m_bit1(c_tilde, index);        
+    }
+    else
+    {
+        c_tilde = set_pow2(e_c - p);
+        c_tilde = set_sign_bit(c_tilde, s);        
+    } 
+    int prec = int_max(p + 1, 2);    
+    FP_INT_PREC result = {c_tilde, prec};
+    return result;
+}
 
 FP_INT IS_FP1(INF_SUP int_is)
 {
