@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <math.h>
-#include <mpfr.h>
+#include "mpfr_interval.h"
 
 
 #define N 20000
@@ -19,73 +19,6 @@ double get_time_ms()
     return (double)tv.tv_sec * 1000.0 + (double)tv.tv_usec / 1000.0;
 }
 
-typedef struct {
-    mpfr_t center;
-    mpfr_t radius;
-} MPFR_C_R;
-
-void set_mpfr_mantissa_bit(mpfr_t center, int index) 
-{
-    mpfr_prec_t prec = mpfr_get_prec(center);
-    index = int_min(index, prec - 1);
-
-    mpfr_exp_t e_c = mpfr_get_exp(center);
-
-    mpfr_t ulp;
-    mpfr_init2(ulp, prec);
-    mpfr_set_ui_2exp(ulp, 1, e_c - index - 1, MPFR_RNDN);  // ulp = 2^(e_c - index)
-
-    mpfr_t shifted;
-    mpfr_init2(shifted, prec + index + 4);
-
-    mpfr_abs(shifted, center, MPFR_RNDN);
-    mpfr_mul_2si(shifted, shifted, -(e_c - index - 1), MPFR_RNDN);
-    //printf("Shifted: ");
-    //mpfr_out_str(stdout, 2, 0, shifted, MPFR_RNDN);
-    //printf("\n");
-
-    mpfr_floor(shifted, shifted);
-    mpz_t z;
-    mpz_init(z);
-    mpfr_get_z(z, shifted, MPFR_RNDZ);
-    int bit = mpz_odd_p(z);
-    mpz_clear(z);
-
-    int sign = mpfr_sgn(center);
-
-    // 0 at index
-    if (bit == 0) 
-    {
-        if (sign > 0)
-        {
-            mpfr_add(center, center, ulp, MPFR_RNDA);
-        }
-        else if (sign < 0)
-        {
-            mpfr_sub(center, center, ulp, MPFR_RNDA);
-        }        
-    }
-
-    //printf("Bit %d: %d\n", index, bit);
-    //mpfr_out_str(stdout, 2, 0, ulp, MPFR_RNDN);
-    //printf("\n");
-    //mpfr_out_str(stdout, 2, 0, center, MPFR_RNDN);
-    //printf("\n");
-
-    mpfr_clear(ulp);
-    mpfr_clear(shifted);
-}
-
-int mpfr_compress(MPFR_C_R int_cr)
-{
-    int e_c = mpfr_get_exp(int_cr.center);
-    int e_r = mpfr_get_exp(int_cr.radius);
-    int prec = mpfr_get_prec(int_cr.center);
-    int p = int_min(e_c - e_r, prec - 1);
-    set_mpfr_mantissa_bit(int_cr.center, p);
-    p += 1;
-    return p;
-}
 
 void generate_test_intervals(MPFR_C_R *test_int, int precision) 
 {
@@ -155,17 +88,6 @@ int main(int argc, char **argv)
 
     generate_test_intervals(test_int, precision);
 
-    /*
-    printf("Test intervals:\n");
-    for (int i = 0; i < 2 * N; i += 100)
-    {
-        printf("Test interval %d:\n", i + 1);
-        mpfr_out_str(stdout, 2, 0, test_int[i].center, MPFR_RNDN);
-        printf("\n");
-        mpfr_out_str(stdout, 2, 0, test_int[i].radius, MPFR_RNDN);
-        printf("\n");
-    }  */
-
     double start = get_time_ms();
     for (int i = 0; i < 2 * N; i ++)
     {
@@ -178,13 +100,9 @@ int main(int argc, char **argv)
     FILE *fp = fopen(time, "a");
     fprintf(fp, "%.10f ms\n", end - start);
 
-    //printf("MPFR Compressed intervals:\n");
     for (int i = 0; i < 2 * N; i ++)
     {
-        //printf("Compressed interval %d:\n", i + 1);
         printf("Precision: %d\n", p[i]);
-        //mpfr_out_str(stdout, 2, 0, array[i], MPFR_RNDN);
-        //printf("\n");
     }
 
     for (int i = 0; i < 2 * N; i ++)
