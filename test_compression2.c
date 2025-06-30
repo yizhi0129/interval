@@ -1,6 +1,5 @@
 #include "convert.h"
-#include <time.h>
-#include <sys/time.h>
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -10,43 +9,6 @@
 
 #define N 20000
 
-typedef union {
-    double d;
-    uint64_t u64;
-} cast;
-
-struct D_F {
-    double *d;
-    float *f;
-};
-
-struct MP {
-    double *d;
-    uint32_t *u32;
-    uint16_t *u16;
-    uint8_t *u8;
-};
-
-// mask: 0111 precsion (36, 44], 0110 precision (28, 36], 0101 precision (20, 28], 
-// 0100 precision (12, 20], 0011 precision (4, 12], 0010 precision [0, 4], default 0000
-static inline uint8_t precision_to_mask3(int prec) 
-{
-    if (prec <= 4)       return 0b0010;
-    else if (prec <= 12) return 0b0011;
-    else if (prec <= 20) return 0b0100;
-    else if (prec <= 28) return 0b0101;
-    else if (prec <= 36) return 0b0110;
-    else if (prec <= 44)  return 0b0111;
-    else                 return 0b1000;
-}
-
-
-double get_time_ms() 
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (double)tv.tv_sec * 1000.0 + (double)tv.tv_usec / 1000.0;
-}
 
 int main(int argc, char ** argv)
 {
@@ -308,7 +270,7 @@ int main(int argc, char ** argv)
 
         if (m2 == 0x08) 
         {
-            res_mp.d[id_d2++] = dc.d;
+            res_mp.d[id_d2 ++] = dc.d;
         } 
         else 
         {
@@ -338,7 +300,7 @@ int main(int argc, char ** argv)
             } 
             else if (m2 & 0x01) 
             {
-                res_mp.u8[id_u8++] = (uint8_t)(dc.u64 >> 56);
+                res_mp.u8[id_u8 ++] = (uint8_t)(dc.u64 >> 56);
             }
         }
     }
@@ -417,68 +379,68 @@ int main(int argc, char ** argv)
 
         if (m1 == 0x08) 
         {
-            val3[ind1] = res_mp.d[id_d2++];
+            val3[ind1] = res_mp.d[id_d2 ++];
         } 
         else 
         {
             dc.u64 = 0;
             if (m1 & 0x04) 
             {
-                dc.u64 |= (uint64_t)res_mp.u32[id_u32++] << 32;
+                dc.u64 |= (uint64_t)res_mp.u32[id_u32 ++] << 32;
                 if (m1 & 0x02) 
                 {
-                    dc.u64 |= (uint64_t)res_mp.u16[id_u16++] << 16;
+                    dc.u64 |= (uint64_t)res_mp.u16[id_u16 ++] << 16;
                     if (m1 & 0x01)
-                        dc.u64 |= (uint64_t)res_mp.u8[id_u8++] << 8;
+                        dc.u64 |= (uint64_t)res_mp.u8[id_u8 ++] << 8;
                 } 
                 else if (m1 & 0x01) 
                 {
-                    dc.u64 |= (uint64_t)res_mp.u8[id_u8++] << 24;
+                    dc.u64 |= (uint64_t)res_mp.u8[id_u8 ++] << 24;
                 }
             } 
             else if (m1 & 0x02) 
             {
-                dc.u64 |= (uint64_t)res_mp.u16[id_u16++] << 48;
+                dc.u64 |= (uint64_t)res_mp.u16[id_u16 ++] << 48;
                 if (m1 & 0x01)
-                    dc.u64 |= (uint64_t)res_mp.u8[id_u8++] << 40;
+                    dc.u64 |= (uint64_t)res_mp.u8[id_u8 ++] << 40;
             } 
             else if (m1 & 0x01) 
             {
-                dc.u64 |= (uint64_t)res_mp.u8[id_u8++] << 56;
+                dc.u64 |= (uint64_t)res_mp.u8[id_u8 ++] << 56;
             }
             val3[ind1] = dc.d;
         }
 
         if (m2 == 0x08) 
         {
-            val3[ind2] = res_mp.d[id_d2++];
+            val3[ind2] = res_mp.d[id_d2 ++];
         } 
         else 
         {
             dc.u64 = 0;
             if (m2 & 0x04) 
             {
-                dc.u64 |= (uint64_t)res_mp.u32[id_u32++] << 32;
+                dc.u64 |= (uint64_t)res_mp.u32[id_u32 ++] << 32;
                 if (m2 & 0x02) 
                 {
-                    dc.u64 |= (uint64_t)res_mp.u16[id_u16++] << 16;
+                    dc.u64 |= (uint64_t)res_mp.u16[id_u16 ++] << 16;
                     if (m2 & 0x01)
-                        dc.u64 |= (uint64_t)res_mp.u8[id_u8++] << 8;
+                        dc.u64 |= (uint64_t)res_mp.u8[id_u8 ++] << 8;
                 } 
                 else if (m2 & 0x01) 
                 {
-                    dc.u64 |= (uint64_t)res_mp.u8[id_u8++] << 24;
+                    dc.u64 |= (uint64_t)res_mp.u8[id_u8 ++] << 24;
                 }
             } 
             else if (m2 & 0x02) 
             {
-                dc.u64 |= (uint64_t)res_mp.u16[id_u16++] << 48;
+                dc.u64 |= (uint64_t)res_mp.u16[id_u16 ++] << 48;
                 if (m2 & 0x01)
-                    dc.u64 |= (uint64_t)res_mp.u8[id_u8++] << 40;
+                    dc.u64 |= (uint64_t)res_mp.u8[id_u8 ++] << 40;
             } 
             else if (m2 & 0x01) 
             {
-                dc.u64 |= (uint64_t)res_mp.u8[id_u8++] << 56;
+                dc.u64 |= (uint64_t)res_mp.u8[id_u8 ++] << 56;
             }
             val3[ind2] = dc.d;
         }

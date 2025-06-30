@@ -1,6 +1,5 @@
 #include "convert.h"
-#include <time.h>
-#include <sys/time.h>
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -10,14 +9,6 @@
 
 #define N 20000
 
-
-
-double get_time_ms() 
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (double)tv.tv_sec * 1000.0 + (double)tv.tv_usec / 1000.0;
-}
 
 
 void generate_test_intervals(MPFR_C_R *test_int, int precision) 

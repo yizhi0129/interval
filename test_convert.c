@@ -1,6 +1,5 @@
 #include "convert.h"
-#include <time.h>
-#include <sys/time.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -10,28 +9,6 @@
 
 #define MAX_RATE 1e+300
 
-double get_time_ms() 
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (double)tv.tv_sec * 1000.0 + (double)tv.tv_usec / 1000.0;
-}
-
-void fprint_binary(FILE *fp, double x)
-{
-    union ieee754_double u;
-    u.d = x;
-    int exp = u.ieee.exponent - DOUBLE_ULS;
-    int sign = get_sign_bit(x);
-    (sign == 1) ? fprintf(fp, "- ") : fprintf(fp, "+ ");
-    fprintf(fp, "1.");
-    for (int i = DOUBLE_E - 1; i >= 0; i --)
-    {
-        int b = read_m_bit(x, i);
-        fprintf(fp, "%d", b);
-    }
-    fprintf(fp, " 2^%d\n", exp);
-}
 
 int main(int argc, char **argv)
 {

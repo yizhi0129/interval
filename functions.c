@@ -14,39 +14,6 @@
 #define TOLERANCE set_pow2(-52)
 
 
-// an old version which does not work 
-void mult_old(double *mA, double *mB, double *rA, double *rB, int k, double *mC, double *rC, double *Id, double *Ones)
-{
-	fesetround(FE_TONEAREST);
-	cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, k, k, k, 1, mA, k, mB, k, 0, mC, k); //mC
-    double *abs_mA = (double *)malloc(k * k * sizeof(double));
-    double *abs_mB = (double *)malloc(k * k * sizeof(double));
-	for(int i = 0; i < k; i ++) 
-    {
-		for(int j = 0; j < k; j ++)
-        {
-			abs_mA[i * k + j] = fabs(mA[i * k + j]);
-			abs_mB[i * k + j] = fabs(mB[i * k + j]);
-		}
-	}
-	double *temp_Id = malloc(k * k * sizeof(double));
-	double *temp_rB = malloc(k * k * sizeof(double));
-	cblas_dcopy(k * k, Id, 1, temp_Id, 1);
-	cblas_dcopy(k * k, rB, 1, temp_rB, 1);
-	fesetround(FE_UPWARD);	
-	cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, k, k, k, (k + 2) * EPS, abs_mB, k, Id, k, 1, rB, k); //rB	
-	cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, k, k, k, 1, abs_mA, k, rB, k, REALMIN, Ones, k); //Ones
-	cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, k, k, k, 1, abs_mB, k, temp_Id, k, 1, temp_rB, k); //temp_rB
-	cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, k, k, k, 1, rA, k, temp_rB, k, 1, rC, k); //rC
-	cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, k, k, k, 1, Ones, k, Id, k, 1, rC, k); //ones
-	free(temp_Id);
-	free(temp_rB);
-    free(abs_mA);
-    free(abs_mB);
-	fesetround(FE_TONEAREST);
-}
-
-
 // <mA, rA> * <mB, rB> = <mC, rC>
 void int_mat_mult(double *mA, double *rA, double *mB, double *rB, double *mC, double *rC, int n)
 {
@@ -182,7 +149,7 @@ C_R inverse(C_R cr_x)
 	double c1 = ((-1) / (-fabs(cr_x.center) - cr_x.radius));
 	fesetround(FE_UPWARD);
 	double c2 = ((-1)/(-fabs(cr_x.center) + cr_x.radius));
-	double c = (c1 + 0.5 * (c2 - c1));
+	double c = (c1 + (c2 - c1) / 2);
 	cr_x.radius = (c - c1);
 	fesetround(FE_TONEAREST);
     int s = get_sign_bit(cr_x.center);
@@ -194,11 +161,16 @@ C_R inverse(C_R cr_x)
 C_R intersection(C_R x, C_R y)
 {
     fesetround(FE_DOWNWARD);
-    double inf = fmax(x.center - x.radius, y.center - y.radius);
+    double inf_x = x.center - x.radius;
+    double inf_y = y.center - y.radius;
+    double inf = fmax(inf_x, inf_y);
     fesetround(FE_UPWARD);
-    double sup = fmin(x.center + x.radius, y.center + y.radius);  
+    double sup_x = x.center + x.radius;
+    double sup_y = y.center + y.radius;
+    double sup = fmin(sup_x, sup_y);
     if (inf > sup)
     {
+        printf("inf_x = %lf, sup_x = %lf, inf_y = %lf, sup_y = %lf\n", inf_x, sup_x, inf_y, sup_y);
         printf("Error: intersection is empty!\n");
         return (C_R){0, 0};
     }
@@ -251,4 +223,103 @@ C_R newton_res(C_R cr_x)
         }
     }
     return cr_x;
+}
+
+C_R interval_add(C_R x, C_R y)
+{
+    double center = x.center + y.center;
+    fesetround(FE_UPWARD);
+    double radius = x.radius + y.radius;
+    fesetround(FE_TONEAREST);
+    return (C_R){center, radius};
+}
+
+C_R interval_sub(C_R x, C_R y)
+{
+    double center = x.center - y.center;
+    fesetround(FE_UPWARD);
+    double radius = x.radius + y.radius;
+    fesetround(FE_TONEAREST);
+    return (C_R){center, radius};
+}
+
+C_R interval_mult(C_R x, C_R y)
+{
+    double center = x.center * y.center;
+    fesetround(FE_UPWARD);
+    double radius = fabs(x.center * y.radius) + fabs(y.center * x.radius) + x.radius * y.radius;
+    fesetround(FE_TONEAREST);
+    return (C_R){center, radius};
+}
+
+
+// A in band storage format diagonal n, subdiagonal n-1, superdiagonal n-1
+// b is a vector of size n
+void interval_GS_tridiag(C_R *A, C_R *b, C_R *x, int n)
+{
+    C_R *x_prev = malloc(n * sizeof(C_R));
+    for (int i = 0; i < n; i ++)
+    {
+        x_prev[i] = x[i]; 
+    }
+
+    int count = 0;
+
+    for (int i = 0; i < 1000; i ++) 
+    {  
+        for (int i = 0; i < n; i ++) 
+        {
+            C_R sum = b[i];
+
+            if (i > 0) 
+            {
+                C_R prod = interval_mult(A[n + i - 1], x[i - 1]);
+                sum = interval_sub(sum, prod);
+            }
+
+            if (i < n - 1) 
+            {
+                C_R prod = interval_mult(A[2 * n - 1 + i], x_prev[i + 1]);
+                sum = interval_sub(sum, prod);
+            }
+
+            //printf("A[%d]: %lf, %lf\n", i, A[i].center, A[i].radius);
+            C_R Aii_inv = inverse(A[i]);
+            //printf("Inverse of A[%d]: %lf, %lf\n", i, Aii_inv.center, Aii_inv.radius);
+            x[i] = interval_mult(sum, Aii_inv);  // x_i^{(k+1)} = sum / A_ii
+
+            x[i] = intersection(x[i], x_prev[i]);
+        }
+
+        count ++;
+
+        // Check convergence
+        double max_diff1 = 0.0, max_diff2 = 0.0;
+        for (int i = 0; i < n; i ++)
+        {
+            double diff1 = fabs((x[i].center - x_prev[i].center) / x[i].center);
+            double diff2 = fabs((x[i].radius - x_prev[i].radius) / x[i].radius);
+            if (diff1 > max_diff1)
+            {
+                max_diff1 = diff1;
+            }
+            if (diff2 > max_diff2)
+            {
+                max_diff2 = diff2;
+            }
+        }
+        //printf("%d %lf %lf\n", count, max_diff1, max_diff2);
+
+        if (max_diff1 < TOLERANCE && max_diff2 < TOLERANCE)
+        {
+            break;
+        }
+
+        for (int i = 0; i < n; i ++)
+        {
+            x_prev[i] = x[i];  // Update x_prev for the next iteration
+        }
+    }
+
+    free(x_prev);
 }
