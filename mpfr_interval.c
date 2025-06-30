@@ -67,6 +67,7 @@ MPFR_C_R read_mpfr_uls(mpfr_t c_tilde)
 
     mpfr_set(int_cr.center, c_tilde, MPFR_RNDN);
     mpfr_set_ui_2exp(int_cr.radius, 1, e_c - prec, MPFR_RNDN);
+    mpfr_mul_d(int_cr.radius, int_cr.radius, 3.0, MPFR_RNDN); // radius = 2^(e_c - prec) * 3
 
     return int_cr;
 }
@@ -84,11 +85,8 @@ void cr_lr(MPFR_C_R int_cr, mpfi_t int_lr)
     mpfr_clears(lo, hi, NULL);
 }
 
-void lr_cr(mpfi_t int_lr, MPFR_C_R int_cr) 
+void lr_cr(mpfi_t int_lr, MPFR_C_R *int_cr) 
 {
-    mpfr_init2(int_cr.center, mpfi_get_prec(int_lr));
-    mpfr_init2(int_cr.radius, mpfi_get_prec(int_lr));
-
     mpfr_t a, b, tmp;
     mpfr_inits2(mpfi_get_prec(int_lr), a, b, tmp, NULL);
 
@@ -96,9 +94,9 @@ void lr_cr(mpfi_t int_lr, MPFR_C_R int_cr)
     mpfi_get_right(b, int_lr);
 
     mpfr_sub(tmp, b, a, MPFR_RNDU);
-    mpfr_div_ui(int_cr.radius, tmp, 2, MPFR_RNDU);
+    mpfr_div_ui(int_cr->radius, tmp, 2, MPFR_RNDU);
 
-    mpfr_add(int_cr.center, a, int_cr.radius, MPFR_RNDU);
+    mpfr_add(int_cr->center, a, int_cr->radius, MPFR_RNDU);
 
     mpfr_clears(a, b, tmp, NULL);
 }

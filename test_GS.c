@@ -40,85 +40,91 @@ void generate_ieee(C_R *A, C_R *b, int n)
 
 void generate_mpfr(MPFR_C_R *A, MPFR_C_R *b, int n, int precision)
 {
+    if (precision < 1) precision = 53;
+
     const double r_exp_min = (double) - precision;
     const double r_exp_max = -5.0; // 0.03125
     const double r_exp_range = r_exp_max - r_exp_min;
 
-    mpfr_prec_t prec = precision;
+    mpfr_prec_t prec = (mpfr_prec_t) precision;
 
-    mpfr_t rand1, rand2, r1_power, r2_power, r_range, r1_val, r2_val, abs_c1, abs_c2, c1_val, c2_val;
-    mpfr_inits2(prec, rand1, rand2, r1_power, r2_power, r_range, r1_val, r2_val, abs_c1, abs_c2, c1_val, c2_val, NULL);
+    gmp_randstate_t rstate;
+    gmp_randinit_default(rstate);
+    gmp_randseed_ui(rstate, (unsigned long) get_time_ms());
 
+    mpfr_t rand1, rand2, r_power, r_range, r_val, abs_c, c_val;
+    mpfr_inits2(prec, rand1, rand2, r_power, r_range, r_val, abs_c, c_val, NULL);
+    mpfr_set_d(r_range, r_exp_range, MPFR_RNDN);
+
+    // diagonal and right-hand side
     for (int i = 0; i < n; i ++) 
     {
-        gmp_randstate_t rstate;
-        gmp_randinit_default(rstate);
-        gmp_randseed_ui(rstate, (unsigned long) get_time_ms());
-
         mpfr_inits2(prec, A[i].center, A[i].radius, NULL);
         mpfr_inits2(prec, b[i].center, b[i].radius, NULL);
 
-        mpfr_urandomb(rand1, rstate); // [0,1)
-        mpfr_urandomb(rand2, rstate); // [0,1)
+        mpfr_urandomb(rand1, rstate);
+        mpfr_set_d(c_val, 4.0, MPFR_RNDN);
+        mpfr_abs(abs_c, c_val, MPFR_RNDN);
 
-        mpfr_set_d(c1_val, 4.0, MPFR_RNDN);
-        mpfr_set_d(c2_val, 1.0, MPFR_RNDN);
+        mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
+        mpfr_fma(r_power, rand1, r_range, r_power, MPFR_RNDN); // r_exp_min + rand1 * r_exp_range
+        mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN); // 2 ^ r_power
+        mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);  // r_val *= abs_c
 
-        mpfr_set_d(r1_power, r_exp_min, MPFR_RNDN);
-        mpfr_set_d(r_range, r_exp_range, MPFR_RNDN);
-        mpfr_fma(r1_power, rand1, r_range, r1_power, MPFR_RNDN);
-        mpfr_ui_pow(r1_val, 2, r1_power, MPFR_RNDN); // two_pow = 2^r_power
-        mpfr_abs(abs_c1, c1_val, MPFR_RNDN);
-        mpfr_mul(r1_val, r1_val, abs_c1, MPFR_RNDN);
+        mpfr_set(A[i].center, c_val, MPFR_RNDN);
+        mpfr_set(A[i].radius, r_val, MPFR_RNDN);
 
-        mpfr_set(A[i].center, c1_val, MPFR_RNDN);
-        mpfr_set(A[i].radius, r1_val, MPFR_RNDN);
+        mpfr_urandomb(rand2, rstate);
+        mpfr_set_d(c_val, 1.0, MPFR_RNDN);
+        mpfr_abs(abs_c, c_val, MPFR_RNDN);
 
-        mpfr_set_d(r2_power, r_exp_min, MPFR_RNDN);
-        mpfr_fma(r2_power, rand1, r_range, r2_power, MPFR_RNDN);
-        mpfr_ui_pow(r2_val, 2, r2_power, MPFR_RNDN); // two_pow = 2^r_power
-        mpfr_abs(abs_c2, c2_val, MPFR_RNDN);
+        mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
+        mpfr_fma(r_power, rand2, r_range, r_power, MPFR_RNDN);
+        mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN);
+        mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);
 
-        mpfr_set(b[i].center, c2_val, MPFR_RNDN);
-        mpfr_set(b[i].radius, r2_val, MPFR_RNDN);
-
-        gmp_randclear(rstate);
+        mpfr_set(b[i].center, c_val, MPFR_RNDN);
+        mpfr_set(b[i].radius, r_val, MPFR_RNDN);
     }
 
+    // subdiagonal and superdiagonal
     for (int i = 0; i < n - 1; i ++) 
     {
-        gmp_randstate_t rstate;
-        gmp_randinit_default(rstate);
-        gmp_randseed_ui(rstate, (unsigned long) get_time_ms());
+        int idx1 = i + n;
+        int idx2 = i + 2 * n - 1;
 
-        mpfr_inits2(prec, A[i + n].center, A[i + n].radius, NULL);
-        mpfr_inits2(prec, A[i + 2 * n - 1].center, A[i + 2 * n - 1].radius, NULL);
+        mpfr_inits2(prec, A[idx1].center, A[idx1].radius, NULL);
+        mpfr_inits2(prec, A[idx2].center, A[idx2].radius, NULL);
 
-        mpfr_urandomb(rand1, rstate); // [0,1)
-        mpfr_urandomb(rand2, rstate); // [0,1)
+        // subdiagonal
+        mpfr_urandomb(rand1, rstate);
+        mpfr_set_d(c_val, -1.0, MPFR_RNDN);
+        mpfr_abs(abs_c, c_val, MPFR_RNDN);
 
-        mpfr_set_d(c1_val, -1.0, MPFR_RNDN);
-        mpfr_set_d(c2_val, -1.0, MPFR_RNDN);
+        mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
+        mpfr_fma(r_power, rand1, r_range, r_power, MPFR_RNDN);
+        mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN);
+        mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);
 
-        mpfr_set_d(r1_power, r_exp_min, MPFR_RNDN);
-        mpfr_fma(r1_power, rand1, r_range, r1_power, MPFR_RNDN);
-        mpfr_ui_pow(r1_val, 2, r1_power, MPFR_RNDN); // two_pow = 2^r_power
-        mpfr_abs(abs_c1, c1_val, MPFR_RNDN);
-        mpfr_mul(r1_val, r1_val, abs_c1, MPFR_RNDN);
+        mpfr_set(A[idx1].center, c_val, MPFR_RNDN);
+        mpfr_set(A[idx1].radius, r_val, MPFR_RNDN);
 
-        mpfr_set(A[i + n].center, c1_val, MPFR_RNDN);
-        mpfr_set(A[i + n].radius, r1_val, MPFR_RNDN);
+        // superdiagonal
+        mpfr_urandomb(rand2, rstate);
+        mpfr_set_d(c_val, -1.0, MPFR_RNDN);
+        mpfr_abs(abs_c, c_val, MPFR_RNDN);
 
-        mpfr_set_d(r2_power, r_exp_min, MPFR_RNDN);
-        mpfr_fma(r2_power, rand2, r_range, r2_power, MPFR_RNDN);
-        mpfr_ui_pow(r2_val, 2, r2_power, MPFR_RNDN); // two_pow = 2^r_power
-        mpfr_abs(abs_c2, c2_val, MPFR_RNDN);
-        mpfr_mul(r2_val, r2_val, abs_c2, MPFR_RNDN);
+        mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
+        mpfr_fma(r_power, rand2, r_range, r_power, MPFR_RNDN);
+        mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN);
+        mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);
 
-        mpfr_set(A[i + 2 * n - 1].center, c2_val, MPFR_RNDN);
-        mpfr_set(A[i + 2 * n - 1].radius, r2_val, MPFR_RNDN);
+        mpfr_set(A[idx2].center, c_val, MPFR_RNDN);
+        mpfr_set(A[idx2].radius, r_val, MPFR_RNDN);
     }
-    mpfr_clears(rand1, rand2, r1_power, r2_power, r1_val, r2_val, abs_c1, abs_c2, c1_val, c2_val, NULL);
+
+    mpfr_clears(rand1, rand2, r_power, r_range, r_val, abs_c, c_val, NULL);
+    gmp_randclear(rstate);
 }
 
 
@@ -855,35 +861,42 @@ int main(int argc, char** argv)
 
             int nnz = 3 * n - 2;
 
-            MPFR_C_R *A = malloc(nnz * sizeof(MPFR_C_R));
-            int *pA = malloc(nnz * sizeof(int));
-            mpfr_t * A_tilde = malloc(nnz * sizeof(mpfr_t));
-            MPFR_C_R *b = malloc(n * sizeof(MPFR_C_R));
-            int *p = malloc(n * sizeof(int));
+            MPFR_C_R *A = calloc(nnz, sizeof(MPFR_C_R));
+            mpfr_prec_t *pA = malloc(nnz * sizeof(mpfr_prec_t));
+            mpfr_t * A_tilde = calloc(nnz, sizeof(mpfr_t));
+            MPFR_C_R *b = calloc(n, sizeof(MPFR_C_R));
 
             generate_mpfr(A, b, n, precision);
+            
             printf("generated A b\n");
 
-            mpfi_t *A_mpfi = malloc(nnz * sizeof(mpfi_t));
-            mpfi_t *b_mpfi = malloc(n * sizeof(mpfi_t));
-            mpfi_t *x_mpfi = malloc(n * sizeof(mpfi_t));
-            mpfi_t *x_mpfi2 = malloc(n * sizeof(mpfi_t));
-            MPFR_C_R *x1 = malloc(n * sizeof(MPFR_C_R));
-            MPFR_C_R *x2 = malloc(n * sizeof(MPFR_C_R));
+            mpfi_t *A_mpfi = calloc(nnz, sizeof(mpfi_t));
+            mpfi_t *A_mpfi2 = calloc(nnz, sizeof(mpfi_t));
+            mpfi_t *b_mpfi = calloc(n, sizeof(mpfi_t));
+            mpfi_t *x_mpfi = calloc(n, sizeof(mpfi_t));
+            mpfi_t *x_mpfi2 = calloc(n, sizeof(mpfi_t));
+            MPFR_C_R *x1 = calloc(n, sizeof(MPFR_C_R));
+            MPFR_C_R *x2 = calloc(n, sizeof(MPFR_C_R));
 
-            
+            for (int i = 0; i < n; i ++) 
+            {
+                mpfr_inits2(precision, x1[i].center, x1[i].radius, x2[i].center, x2[i].radius, NULL);
+            }
+
             for (int i = 0; i < nnz; i ++)
             {
-                mpfi_init2(A_mpfi[i], mpfr_get_prec(A[i].center));
+                mpfi_init2(A_mpfi[i], precision);
                 cr_lr(A[i], A_mpfi[i]);
-            }
+            } 
 
             for (int i = 0; i < n; i ++)
             {
-                mpfi_init2(b_mpfi[i], mpfr_get_prec(b[i].center));
+                mpfi_init2(b_mpfi[i], precision);
                 cr_lr(b[i], b_mpfi[i]);
-                mpfi_init2(x_mpfi[i], mpfr_get_prec(b[i].center));
+                mpfi_init2(x_mpfi[i], precision);
                 mpfi_interv_d(x_mpfi[i], 0.0, 1.0); // Initialize x to [0, 1]
+                mpfi_init2(x_mpfi2[i], precision);
+                mpfi_interv_d(x_mpfi2[i], 0.0, 1.0); // Initialize x2 to [0, 1]
             }
 
             // GS ref
@@ -894,7 +907,7 @@ int main(int argc, char** argv)
             double start1 = get_time_ms();
             for (int i = 0; i < nnz; i ++)
             {
-                pA[i] = mpfr_compress(A[i]);
+                pA[i] = (mpfr_prec_t) mpfr_compress(A[i]);
                 mpfr_init2(A_tilde[i], pA[i]);
                 mpfr_set(A_tilde[i], A[i].center, MPFR_RNDZ);
             }
@@ -908,7 +921,7 @@ int main(int argc, char** argv)
             fprintf(fp_matrix, "%d\t%d\n", n, nnz);
             for (int i = 0; i < nnz; i ++)
             {
-                fprintf(fp_matrix, "%d\n", pA[i]);
+                fprintf(fp_matrix, "%d\n", (int)pA[i]);
             }
             for (int i = 0; i < nnz; i ++)
             {
@@ -939,7 +952,6 @@ int main(int argc, char** argv)
                 free(b);
                 free(pA);
                 free(A_tilde);
-                free(p);
                 free(A_mpfi);
                 free(b_mpfi);
                 free(x_mpfi);
@@ -947,7 +959,7 @@ int main(int argc, char** argv)
                 return 1;
             }
             int *pA_read = malloc(nnz_read * sizeof(int));
-            mpfr_t *A_tilde_read = malloc(nnz_read * sizeof(mpfr_t));
+            mpfr_t *A_tilde_read = calloc(nnz_read, sizeof(mpfr_t));
             for (int i = 0; i < nnz_read; i ++)
             {
                 if (fscanf(fp_matrix_read, "%d\n", &pA_read[i]) != 1)
@@ -959,7 +971,7 @@ int main(int argc, char** argv)
             }
             for (int i = 0; i < nnz_read; i ++)
             {
-                mpfr_init2(A_tilde_read[i], pA_read[i]);
+                mpfr_init2(A_tilde_read[i], (mpfr_prec_t)pA_read[i]);
                 mpfr_inp_str(A_tilde_read[i], fp_matrix_read, 2, MPFR_RNDN);
             }
             fclose(fp_matrix_read);
@@ -971,57 +983,56 @@ int main(int argc, char** argv)
             for (int i = 0; i < nnz; i ++)
             {
                 MPFR_C_R tmp;
+                mpfi_init2(A_mpfi2[i], (mpfr_prec_t)pA_read[i]);
                 tmp = read_mpfr_uls(A_tilde_read[i]);
-                cr_lr(tmp, A_mpfi[i]);
+                cr_lr(tmp, A_mpfi2[i]);
+                mpfr_clear(tmp.center);
+                mpfr_clear(tmp.radius);
             }
             double end4 = get_time_ms();    
             printf("read radius from A_tilde\n");    
 
-            for (int i = 0; i < n; i ++)
-            {
-                mpfi_init2(x_mpfi2[i], mpfr_get_prec(b[i].center));
-                mpfi_interv_d(x_mpfi2[i], 0.0, 1.0); // Initialize x to [0, 1]
-            }
 
             // Gauss-Seidel
             double start_GS = get_time_ms();
-            interval_GS_tridiag_mpfi(A_mpfi, b_mpfi, x_mpfi2, n);
+            interval_GS_tridiag_mpfi(A_mpfi2, b_mpfi, x_mpfi2, n);
             double end_GS = get_time_ms();
             printf("GS done\n");
 
             // accuracy check
-            int max_prec = 0;
             for (int i = 0; i < n; i ++)
             {
-                lr_cr(x_mpfi[i], x1[i]);
-                lr_cr(x_mpfi2[i], x2[i]);
-                max_prec = fmax(max_prec, mpfr_get_prec(x1[i].center));
-                max_prec = fmax(max_prec, mpfr_get_prec(x2[i].center));
+                lr_cr(x_mpfi[i], &x1[i]);
+                lr_cr(x_mpfi2[i], &x2[i]);
             }
 
             FILE *fp_res = fopen(res, "a");
-            mpfr_t bias, dilat, max_bias, max_dilat;
-            mpfr_inits2(max_prec, bias, dilat, max_bias, max_dilat, NULL);
+            mpfr_t bias, dilat, max_bias, max_dilat, temp1, temp2;
+            mpfr_inits2(precision, bias, dilat, max_bias, max_dilat, temp1, temp2, NULL);
             mpfr_set_d(bias, 0.0, MPFR_RNDN);
             mpfr_set_d(dilat, 0.0, MPFR_RNDN);
             mpfr_set_d(max_bias, 0.0, MPFR_RNDN);
             mpfr_set_d(max_dilat, 0.0, MPFR_RNDN);
+            mpfr_set_d(temp1, 0.0, MPFR_RNDN);
+            mpfr_set_d(temp2, 0.0, MPFR_RNDN);
             for (int i = 0; i < n_read; i ++)
             {
-                mpfr_sub(bias, x2[i].center, x1[i].center, MPFR_RNDN);
-                mpfr_div(bias, bias, x1[i].center, MPFR_RNDN);
-                mpfr_abs(bias, bias, MPFR_RNDN);
+                mpfr_sub(temp1, x2[i].center, x1[i].center, MPFR_RNDN);
+                mpfr_div(temp1, temp1, x1[i].center, MPFR_RNDN);
+                mpfr_abs(temp1, temp1, MPFR_RNDN);
 
-                mpfr_div(dilat, x2[i].radius, x1[i].radius, MPFR_RNDN);
-                mpfr_abs(dilat, dilat, MPFR_RNDN);
-                
-                mpfr_max(max_bias, max_bias, bias, MPFR_RNDN);
-                mpfr_max(max_dilat, max_dilat, dilat, MPFR_RNDN);
+                mpfr_div(temp2, x2[i].radius, x1[i].radius, MPFR_RNDN);
+                mpfr_abs(temp2, temp2, MPFR_RNDN);
 
-                mpfr_add(bias, bias, bias, MPFR_RNDN);
-                mpfr_add(dilat, dilat, dilat, MPFR_RNDN);
-                
+                mpfr_max(max_bias, max_bias, temp1, MPFR_RNDN);
+                mpfr_max(max_dilat, max_dilat, temp2, MPFR_RNDN);
+
+                mpfr_add(bias, bias, temp1, MPFR_RNDN);
+                mpfr_add(dilat, dilat, temp2, MPFR_RNDN);
+
             }
+            mpfr_clears(temp1, temp2, NULL);
+
             mpfr_div_ui(bias, bias, n_read, MPFR_RNDN);
             mpfr_div_ui(dilat, dilat, n_read, MPFR_RNDN);
 
@@ -1037,7 +1048,7 @@ int main(int argc, char** argv)
            
             // Write timing information to file
             FILE *fp_time = fopen(time, "a");
-            fprintf(fp_time, "%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t(ms)\n",
+            fprintf(fp_time, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t(ms)\n",
                 end1 - start1, end2 - start2, end3 - start3,
                 end4 - start4, end_GS - start_GS);
             fclose(fp_time);
@@ -1049,13 +1060,16 @@ int main(int argc, char** argv)
                 mpfr_clear(b[i].center);
                 mpfr_clear(b[i].radius);
                 mpfi_clear(x_mpfi2[i]);
+                mpfr_clears(x2[i].center, x2[i].radius, x1[i].center, x1[i].radius, NULL);
             }
 
             for (int i = 0; i < nnz; i ++)
             {
                 mpfi_clear(A_mpfi[i]);
+                mpfi_clear(A_mpfi2[i]);
                 mpfr_clear(A[i].center);
                 mpfr_clear(A[i].radius);
+                mpfr_clear(A_tilde_read[i]);
                 mpfr_clear(A_tilde[i]);
             }
 
@@ -1063,7 +1077,7 @@ int main(int argc, char** argv)
 
             mpfr_free_cache();
 
-            free(p);
+
             free(x_mpfi);
             free(A_mpfi);
             free(b_mpfi);
@@ -1073,6 +1087,11 @@ int main(int argc, char** argv)
             free(A_tilde);
             free(A_tilde_read);
             free(pA_read);
+            free(x_mpfi2);
+            free(x1);
+            free(x2);
+            free(A_mpfi2);
+
             break;
         }
     }

@@ -9,28 +9,20 @@ for i in {1..10}
 do 
     for j in 10 100 1000 10000 100000
     do
-        k=0 
-        echo "Running test_GS with N = $j, precision = $k"
-        ./test_GS "$j" "$k"
-        sleep 1
+        for k in 53 64 128 256
+        do
+            echo "Running test_GS with N = $j, precision = $k"
+            ./test_GS "$j" "$k"
+            sleep 1
+        done
     done
 done
 
-for i in {1..10}
-do 
-    for j in 10 100 1000 10000 100000
-    do
-        k=1 
-        echo "Running test_GS with N = $j, precision = $k"
-        ./test_GS "$j" "$k"
-        sleep 1
-    done
-done
 
 
 
 # plot
 
-gnuplot gs_time.gp
+#gnuplot gs_time.gp
 
-gnuplot gs_err.gp
+#gnuplot gs_err.gp
