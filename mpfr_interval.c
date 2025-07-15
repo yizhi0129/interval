@@ -57,7 +57,7 @@ int mpfr_compress(MPFR_C_R int_cr)
     return p;
 }
 
-MPFR_C_R read_mpfr_uls(mpfr_t c_tilde)
+MPFR_C_R read_mpfr_uls3(mpfr_t c_tilde)
 {
     MPFR_C_R int_cr;
     mpfr_prec_t prec = mpfr_get_prec(c_tilde);
@@ -107,8 +107,8 @@ void lr_cr(mpfi_t int_lr, MPFR_C_R *int_cr)
 // b is a vector of size n
 void interval_GS_tridiag_mpfi(mpfi_t *A, mpfi_t *b, mpfi_t *x, int n) 
 {
-    mpfi_t sum, tmp, prod;
-    mpfi_inits(sum, tmp, prod, NULL);
+    mpfi_t sum, prod;
+    mpfi_inits(sum, prod, NULL);
 
     mpfi_t *x_prev = malloc(n * sizeof(mpfi_t));
     for (int i = 0; i < n; i ++) 
@@ -140,9 +140,11 @@ void interval_GS_tridiag_mpfi(mpfi_t *A, mpfi_t *b, mpfi_t *x, int n)
             }
 
             mpfi_div(x[i], sum, A[i]);
+
+            mpfi_intersect(x[i], x[i], x_prev[i]);
         }
 
-        int converged = check_convergence(x, x_prev, n, 1e-6);   
+        int converged = check_convergence(x, x_prev, n, TOLERANCE);   
         if (converged) 
         {
             break;
@@ -156,32 +158,112 @@ void interval_GS_tridiag_mpfi(mpfi_t *A, mpfi_t *b, mpfi_t *x, int n)
 
     free(x_prev);
 
-    mpfi_clears(sum, tmp, prod, NULL);
+    mpfi_clears(sum, prod, NULL);
 }
 
 int check_convergence(mpfi_t *x, mpfi_t *x_prev, int n, double tol) 
 {
     mp_prec_t prec = mpfi_get_prec(x[0]); 
-    mpfr_t w_curr, w_prev, diff;
-    mpfr_inits2(prec, w_curr, w_prev, diff, NULL);  
+    mpfr_t left, old_left, diff_left, right, old_right, diff_right;
+    mpfr_inits2(prec, left, old_left, diff_left, right, old_right, diff_right, NULL);
 
     int converged = 1;
 
     for (int i = 0; i < n; i ++) 
     {
-        mpfi_diam_abs(w_curr, x[i]);
-        mpfi_diam_abs(w_prev, x_prev[i]);
+        mpfi_get_left(old_left, x_prev[i]);
+        mpfi_get_left(left, x[i]);
+        mpfi_get_right(old_right, x_prev[i]);
+        mpfi_get_right(right, x[i]);
 
-        mpfr_sub(diff, w_curr, w_prev, MPFR_RNDN);
-        mpfr_abs(diff, diff, MPFR_RNDN);
+        mpfr_sub(diff_left, left, old_left, MPFR_RNDN);
+        mpfr_sub(diff_right, right, old_right, MPFR_RNDN);
 
-        if (mpfr_cmp_d(diff, tol) > 0) 
+        mpfr_div(diff_left, diff_left, left, MPFR_RNDN);
+        mpfr_div(diff_right, diff_right, right, MPFR_RNDN);
+
+        mpfr_abs(diff_left, diff_left, MPFR_RNDN);
+        mpfr_abs(diff_right, diff_right, MPFR_RNDN);
+
+        if (mpfr_cmp_d(diff_left, tol) > 0 || mpfr_cmp_d(diff_right, tol) > 0) 
         {
             converged = 0;
             break;
         }
     }
 
-    mpfr_clears(w_curr, w_prev, diff, NULL);
+    mpfr_clears(left, old_left, diff_left, right, old_right, diff_right, NULL);
     return converged;
+}
+
+void interval_GS_CSR_mpfi(mpfi_t *A, int *idx, int *col_id, mpfi_t *b, mpfi_t *x, int n)
+{
+    mpfi_t *x_prev = malloc(n * sizeof(mpfi_t));
+    for (int i = 0; i < n; i ++)
+    {
+        mpfi_init2(x_prev[i], mpfi_get_prec(x[i]));
+        mpfi_set(x_prev[i], x[i]);
+    }
+
+    for (;;) 
+    {
+        for (int i = 0; i < n; i ++)
+        {
+            mpfi_set(x_prev[i], x[i]);
+        }
+
+        for (int i = 0; i < n; i ++)
+        {
+            mpfi_t sum;
+            mpfi_init2(sum, mpfi_get_prec(b[i]));
+            mpfi_set(sum, b[i]);
+
+            mpfi_t A_ii[n];
+
+            for (int k = idx[i]; k < idx[i + 1]; k ++)
+            {
+                int j = col_id[k];
+                if (j < i) 
+                {
+                    mpfi_t prod;
+                    mpfi_init2(prod, mpfi_get_prec(A[k]));
+                    mpfi_mul(prod, A[k], x_prev[j]);
+                    mpfi_sub(sum, sum, prod);
+                    mpfi_clear(prod);
+                }
+                else if (j == i) 
+                {
+                    mpfi_init2(A_ii[i], mpfi_get_prec(A[k]));
+                    mpfi_set(A_ii[i], A[k]);
+                }
+                else if (j > i) 
+                {
+                    mpfi_t prod;
+                    mpfi_init2(prod, mpfi_get_prec(A[k]));
+                    mpfi_mul(prod, A[k], x_prev[j]);
+                    mpfi_sub(sum, sum, prod);
+                    mpfi_clear(prod);
+                }
+            }
+
+            // Inverse of A_ii
+            mpfi_div(x[i], sum, A_ii[i]);
+            mpfi_intersect(x[i], x[i], x_prev[i]);
+
+            mpfi_clear(sum);
+        }
+
+        int converged = check_convergence(x, x_prev, n, TOLERANCE);
+        if (converged) 
+        {
+            break;
+        }
+    }
+
+    for (int i = 0; i < n; i ++)
+    {
+        mpfi_clear(x_prev[i]);
+    }
+    
+    free(x_prev);
 }

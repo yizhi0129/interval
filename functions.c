@@ -7,12 +7,6 @@
 #include "convert.h"
 #include "functions.h"
 
-#define EPS set_pow2(-53)
-#define REALMIN set_pow2(-1022)
-
-#define ITERMAX 15
-#define TOLERANCE set_pow2(-52)
-
 
 // <mA, rA> * <mB, rB> = <mC, rC>
 void int_mat_mult(double *mA, double *rA, double *mB, double *rB, double *mC, double *rC, int n)
@@ -171,8 +165,8 @@ C_R intersection(C_R x, C_R y)
     if (inf > sup)
     {
         printf("inf_x = %lf, sup_x = %lf, inf_y = %lf, sup_y = %lf\n", inf_x, sup_x, inf_y, sup_y);
-        printf("Error: intersection is empty!\n");
-        return (C_R){0, 0};
+        printf("Error: intersection is empty! back to previous interval\n");
+        return y;
     }
     double center = (inf + sup) / 2;
     double radius = center - inf;
@@ -323,3 +317,78 @@ void interval_GS_tridiag(C_R *A, C_R *b, C_R *x, int n)
 
     free(x_prev);
 }
+
+// A in CSR format
+// idx is the index of the first non-zero element in each row
+// col_id is the column index of each non-zero element
+// b is a vector of size n
+void interval_GS_CSR(C_R *A, int *idx, int *col_id, C_R *b, C_R *x, int n)
+{
+    C_R *x_prev = malloc(n * sizeof(C_R));
+    for (int i = 0; i < n; i ++)
+    {
+        x_prev[i] = x[i]; 
+    }
+
+    for (int iter = 0; iter < 1000; iter ++) 
+    {  
+        //printf("Iteration %d:\n", iter + 1);
+        for (int i = 0; i < n; i ++) 
+        {
+            C_R sum = b[i];
+            C_R Aii_inv = { 0.0, 0.0 };
+
+            for (int k = idx[i]; k < idx[i + 1]; k ++)
+            {
+                int j = col_id[k];
+
+                if (j < i) 
+                {
+                    C_R prod = interval_mult(A[k], x[j]);
+                    sum = interval_sub(sum, prod);
+                }
+                else if (j == i)
+                {
+                    Aii_inv = inverse(A[k]);
+                }
+                else if (j > i) 
+                {
+                    C_R prod = interval_mult(A[k], x_prev[j]);
+                    sum = interval_sub(sum, prod);
+                }              
+            }
+            x[i] = interval_mult(sum, Aii_inv);  // x_i^{(k+1)} = sum / A_ii
+
+            x[i] = intersection(x[i], x_prev[i]);
+        }
+
+        // Check convergence
+        double max_diff1 = 0.0, max_diff2 = 0.0;
+        for (int i = 0; i < n; i ++)
+        {
+            double diff1 = fabs((x[i].center - x_prev[i].center) / x[i].center);
+            double diff2 = fabs((x[i].radius - x_prev[i].radius) / x[i].radius);
+            if (diff1 > max_diff1)
+            {
+                max_diff1 = diff1;
+            }
+            if (diff2 > max_diff2)
+            {
+                max_diff2 = diff2;
+            }
+        }
+
+        if (max_diff1 < TOLERANCE && max_diff2 < TOLERANCE)
+        {
+            break;
+        }
+
+        for (int i = 0; i < n; i ++)
+        {
+            x_prev[i] = x[i];  // Update x_prev for the next iteration
+        }
+    }
+
+    free(x_prev);
+}
+

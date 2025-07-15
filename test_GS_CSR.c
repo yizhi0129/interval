@@ -2,43 +2,93 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <stdbool.h>
 
 #include "convert.h"
 #include "functions.h"
 #include "mpfr_interval.h"
 
 
-void generate_ieee(C_R *A, C_R *b, int n)
+void generate_rhs_ieee(C_R *b, int n)
 {
-    const double r_exp_min = -53.0;
+    const double r_exp_min = -52.0;
     const double r_exp_max = -5.0; 
 
     srand(get_time_ms());
 
     for (int i = 0; i < n; i ++)
     {
-        A[i].center = 4.0;
-        double r_power1 = r_exp_min + ((double)rand() / RAND_MAX) * (r_exp_max - r_exp_min);
-        A[i].radius = pow(2, r_power1) * fabs(A[i].center);
-
         b[i].center = 1.0;
         double r_power2 = r_exp_min + ((double)rand() / RAND_MAX) * (r_exp_max - r_exp_min);
         b[i].radius = pow(2, r_power2) * fabs(b[i].center);
     }
-
-    for (int i = 0; i < n - 1; i ++)
-    {
-        A[i + n].center = -1.0;
-        double r_power1 = r_exp_min + ((double)rand() / RAND_MAX) * (r_exp_max - r_exp_min);
-        A[i + n].radius = pow(2, r_power1) * fabs(A[i + n].center);
-
-        A[i + 2 * n - 1].center = -1.0;
-        double r_power2 = r_exp_min + ((double)rand() / RAND_MAX) * (r_exp_max - r_exp_min);
-        A[i + 2 * n - 1].radius = pow(2, r_power2) * fabs(A[i + 2 * n - 1].center);
-    }
 }
 
-void generate_mpfr(MPFR_C_R *A, MPFR_C_R *b, int n, int precision)
+
+// TODO: without mask
+void generate_matrix_CSR_ieee(C_R **A, int *idx, int **col_id, int n)
+{
+    const double r_exp_min = -52.0;
+    const double r_exp_max = -5.0; 
+    
+    idx[0] = 0;
+
+    srand(get_time_ms());
+
+    uint64_t N = n * n;
+    uint64_t n_mask = (N + 7) >> 3; // ceil(N / 8)
+    uint8_t *mask = (uint8_t *)calloc(n_mask, sizeof(uint8_t));
+    int count = 0;
+
+    for (int i = 0; i < n; i ++) 
+    {
+        uint64_t i_mask = i * n + i;
+        mask[i_mask >> 3] |= (1 << (7 - (i_mask & 0b111)));
+    }
+
+    for (int i = 0; i < n; i ++) 
+    {
+        for (int j = 0; j < n; j ++) 
+        {
+            if (j != i && ((double)rand() / RAND_MAX) < (1.0 / n)) 
+            {
+                uint64_t i_mask = i * n + j;
+                mask[i_mask >> 3] |= (1 << (7 - (i_mask & 0b111)));
+            }
+        }
+    }
+
+    for (int i = 0; i < n_mask; i ++) 
+    {
+        count += __builtin_popcount(mask[i]);
+    }
+
+    *A = (C_R *)malloc(count * sizeof(C_R));
+    *col_id = (int *)malloc(count * sizeof(int));
+
+    int pos = 0;
+
+    for (int i = 0; i < n; i ++)
+    {
+        for (int j = 0; j < n; j ++)
+        {
+            uint64_t i_mask = i * n + j;
+            if (mask[i_mask >> 3] & (1 << (7 - (i_mask & 0b111))))
+            {
+                (*A)[pos].center = (j == i) ? 4.0 : -1.0;
+                double r_power = r_exp_min + ((double)rand() / RAND_MAX) * (r_exp_max - r_exp_min);
+                (*A)[pos].radius = pow(2, r_power) * fabs((*A)[pos].center);
+                (*col_id)[pos] = j;
+                pos ++;
+            }
+        }
+        idx[i + 1] = pos;
+    }
+    free(mask);
+}
+
+
+void generate_rhs_mpfr(MPFR_C_R *b, int n, int precision)
 {
     if (precision < 1) precision = 53;
 
@@ -52,78 +102,117 @@ void generate_mpfr(MPFR_C_R *A, MPFR_C_R *b, int n, int precision)
     gmp_randinit_default(rstate);
     gmp_randseed_ui(rstate, (unsigned long) get_time_ms());
 
-    mpfr_t rand1, rand2, r_power, r_range, r_val, abs_c, c_val;
-    mpfr_inits2(prec, rand1, rand2, r_power, r_range, r_val, abs_c, c_val, NULL);
+    mpfr_t rand, r_power, r_range, r_val, abs_c, c_val;
+    mpfr_inits2(prec, rand, r_power, r_range, r_val, abs_c, c_val, NULL);
     mpfr_set_d(r_range, r_exp_range, MPFR_RNDN);
 
     // diagonal and right-hand side
     for (int i = 0; i < n; i ++) 
     {
-        mpfr_inits2(prec, A[i].center, A[i].radius, NULL);
         mpfr_inits2(prec, b[i].center, b[i].radius, NULL);
 
-        mpfr_urandomb(rand1, rstate);
-        mpfr_set_d(c_val, 4.0, MPFR_RNDN);
-        mpfr_abs(abs_c, c_val, MPFR_RNDN);
-
-        mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
-        mpfr_fma(r_power, rand1, r_range, r_power, MPFR_RNDN); // r_exp_min + rand1 * r_exp_range
-        mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN); // 2 ^ r_power
-        mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);  // r_val *= abs_c
-
-        mpfr_set(A[i].center, c_val, MPFR_RNDN);
-        mpfr_set(A[i].radius, r_val, MPFR_RNDN);
-
-        mpfr_urandomb(rand2, rstate);
+        mpfr_urandomb(rand, rstate);
         mpfr_set_d(c_val, 1.0, MPFR_RNDN);
         mpfr_abs(abs_c, c_val, MPFR_RNDN);
 
         mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
-        mpfr_fma(r_power, rand2, r_range, r_power, MPFR_RNDN);
-        mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN);
-        mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);
+        mpfr_fma(r_power, rand, r_range, r_power, MPFR_RNDN); // r_exp_min + rand * r_exp_range
+        mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN); // 2 ^ r_power
+        mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);  // r_val *= abs_c
 
         mpfr_set(b[i].center, c_val, MPFR_RNDN);
         mpfr_set(b[i].radius, r_val, MPFR_RNDN);
     }
 
-    // subdiagonal and superdiagonal
-    for (int i = 0; i < n - 1; i ++) 
+    mpfr_clears(rand, r_power, r_range, r_val, abs_c, c_val, NULL);
+    gmp_randclear(rstate);
+}
+
+
+void generate_matrix_CSR_mpfr(MPFR_C_R **A, int *idx, int **col_id, int n, int precision)
+{
+    if (precision < 1) precision = 53;
+
+    const double r_exp_min = (double) - precision;
+    const double r_exp_max = -5.0; // 0.03125
+    const double r_exp_range = r_exp_max - r_exp_min;
+
+    idx[0] = 0;
+
+    srand(get_time_ms());
+
+    int N = n * n;
+    bool *mask = (bool *)calloc(N, sizeof(bool));
+    int count = 0;
+    for (int i = 0; i < N; i ++)
     {
-        int idx1 = i + n;
-        int idx2 = i + 2 * n - 1;
-
-        mpfr_inits2(prec, A[idx1].center, A[idx1].radius, NULL);
-        mpfr_inits2(prec, A[idx2].center, A[idx2].radius, NULL);
-
-        // subdiagonal
-        mpfr_urandomb(rand1, rstate);
-        mpfr_set_d(c_val, -1.0, MPFR_RNDN);
-        mpfr_abs(abs_c, c_val, MPFR_RNDN);
-
-        mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
-        mpfr_fma(r_power, rand1, r_range, r_power, MPFR_RNDN);
-        mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN);
-        mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);
-
-        mpfr_set(A[idx1].center, c_val, MPFR_RNDN);
-        mpfr_set(A[idx1].radius, r_val, MPFR_RNDN);
-
-        // superdiagonal
-        mpfr_urandomb(rand2, rstate);
-        mpfr_set_d(c_val, -1.0, MPFR_RNDN);
-        mpfr_abs(abs_c, c_val, MPFR_RNDN);
-
-        mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
-        mpfr_fma(r_power, rand2, r_range, r_power, MPFR_RNDN);
-        mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN);
-        mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);
-
-        mpfr_set(A[idx2].center, c_val, MPFR_RNDN);
-        mpfr_set(A[idx2].radius, r_val, MPFR_RNDN);
+        if (i % n == 0 || (double)rand()/RAND_MAX < (1.0 / n))
+        {
+            mask[i] = true;
+            count ++;
+        }
     }
 
-    mpfr_clears(rand1, rand2, r_power, r_range, r_val, abs_c, c_val, NULL);
+    *A = (MPFR_C_R *)malloc(count * sizeof(MPFR_C_R));
+    *col_id = (int *)malloc(count * sizeof(int));
+
+    mpfr_prec_t prec = (mpfr_prec_t) precision;
+
+    gmp_randstate_t rstate;
+    gmp_randinit_default(rstate);
+    gmp_randseed_ui(rstate, (unsigned long) get_time_ms());
+
+    mpfr_t rand, r_power, r_range, r_val, abs_c, c_val;
+    mpfr_inits2(prec, rand, r_power, r_range, r_val, abs_c, c_val, NULL);
+    mpfr_set_d(r_range, r_exp_range, MPFR_RNDN);
+   
+    int pos = 0;
+
+    for (int i = 0; i < n; i ++) 
+    {
+        for (int j = 0; j < n; j ++)
+        {
+            if (j == i)
+            {
+                mpfr_inits2(prec, (*A)[pos].center, (*A)[pos].radius, NULL);
+                mpfr_set_d((*A)[pos].center, 4.0, MPFR_RNDN);
+                mpfr_urandomb(rand, rstate);
+                mpfr_set_d(c_val, 4.0, MPFR_RNDN);
+                mpfr_abs(abs_c, c_val, MPFR_RNDN);
+
+                mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
+                mpfr_fma(r_power, rand, r_range, r_power, MPFR_RNDN);
+                mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN);
+                mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);
+
+                mpfr_set((*A)[pos].radius, r_val, MPFR_RNDN);
+                (*col_id)[pos] = j;
+                pos ++;
+            }
+            
+            else if (mask[i * n + j])
+            {
+                mpfr_inits2(prec, (*A)[pos].center, (*A)[pos].radius, NULL);
+                mpfr_set_d((*A)[pos].center, -1.0, MPFR_RNDN);
+                mpfr_urandomb(rand, rstate);
+                mpfr_set_d(c_val, -1.0, MPFR_RNDN);
+                mpfr_abs(abs_c, c_val, MPFR_RNDN);
+
+                mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
+                mpfr_fma(r_power, rand, r_range, r_power, MPFR_RNDN);
+                mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN);
+                mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);
+
+                mpfr_set((*A)[pos].radius, r_val, MPFR_RNDN);
+                (*col_id)[pos] = j;
+                pos ++;
+            }          
+        }
+        idx[i + 1] = pos;       
+    }
+
+    free(mask);
+    mpfr_clears(rand, r_power, r_range, r_val, abs_c, c_val, NULL);
     gmp_randclear(rstate);
 }
 
@@ -146,18 +235,18 @@ int main(int argc, char** argv)
             sprintf(matrix, "GS_mixed_matrix_%d.txt", n);
             sprintf(res, "GS_mixed_res_%d.txt", n);
 
-            int nnz = 3 * n - 2; // number of non-zero elements in the banded matrix
-
-            C_R *A = malloc(nnz * sizeof(C_R));
+            C_R *A = NULL;
+            int *idx1 = malloc((n + 1) * sizeof(int));
+            int *idx2 = malloc((n + 1) * sizeof(int));
+            int *col_id1 = NULL;
+            int *col_id2 = NULL;
             C_R *b = malloc(n * sizeof(C_R));
             C_R *x1 = malloc(n * sizeof(C_R));
             C_R *x2 = malloc(n * sizeof(C_R));
 
-            FP_INT_PREC *A_prec = malloc(nnz * sizeof(FP_INT_PREC));
 
-            C_R * A_new = malloc(nnz * sizeof(C_R));
-
-            generate_ieee(A, b, n);
+            generate_rhs_ieee(b, n);
+            generate_matrix_CSR_ieee(&A, idx1, &col_id1, n);
             printf("generated A b\n");
 
             // initialize x
@@ -171,17 +260,18 @@ int main(int argc, char** argv)
             printf("initialized x\n");
 
             // GS ref 
-            interval_GS_tridiag(A, b, x1, n);
+            interval_GS_CSR(A, idx1, col_id1, b, x1, n);
             printf("GS ref done\n");
 
             // Convert C_R to FP_INT_PREC
+            int nnz = idx1[n] - idx1[0];
+            FP_INT_PREC *A_prec = malloc(nnz * sizeof(FP_INT_PREC));
             double start1 = get_time_ms();
             for (int i = 0; i < nnz; i ++)
             {
                 A_prec[i] = CR_FP_p(A[i]);
             }
             double end1 = get_time_ms();
-
             printf("converted C_R to FP_INT_PREC\n");
 
             int n_mask = (nnz + 1) >> 1; // ceil(N / 2)
@@ -216,6 +306,14 @@ int main(int argc, char** argv)
             {
                 fprintf(fp_matrix, "%d\n", mask[i]);
             }
+            for (int i = 0; i < n + 1; i ++)
+            {
+                fprintf(fp_matrix, "%d\n", idx1[i]);
+            }
+            for (int i = 0; i < nnz; i ++)
+            {
+                fprintf(fp_matrix, "%d\n", col_id1[i]);
+            }
             for (int i = 0; i < count_d; i ++)
             {
                 fprintf(fp_matrix, "%.17e\n", A_mixed->d[i]);
@@ -233,6 +331,7 @@ int main(int argc, char** argv)
                 fprintf(fp_matrix, "%hhu\n", A_mixed->u8[i]);
             }
             
+
             fclose(fp_matrix);
             double end3 = get_time_ms();
             printf("wrote matrix A to file\n");
@@ -261,6 +360,10 @@ int main(int argc, char** argv)
                 free(A_prec);
                 free(mask);
                 free(A_mixed);
+                free(idx1);
+                free(col_id1);
+                free(idx2);
+                free(col_id2);
                 return 1;
             }   
 
@@ -293,6 +396,48 @@ int main(int argc, char** argv)
                 count_16_read += (m >> 5) & 1;
                 count_32_read += (m >> 6) & 1;
                 count_d_read += (m >> 7) & 1;
+            }
+
+            for (int i = 0; i < n + 1; i ++)
+            {
+                if (fscanf(fp_matrix_read, "%d\n", &idx2[i]) != 1) 
+                {
+                    fprintf(stderr, "Error: failed to read idx2[%d]\n", i);
+                    fclose(fp_matrix_read);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            int nnz_read = idx2[n] - idx2[0];
+            col_id2 = malloc(nnz_read * sizeof(int));
+
+            if (nnz_read != nnz)
+            {
+                fprintf(stderr, "Error: nnz mismatch.\n");
+                fclose(fp_matrix_read);
+                free(A);
+                free(b);
+                free(x1);
+                free(x2);
+                free(A_prec);
+                free(mask);
+                free(A_mixed->d);
+                free(A_mixed->u32);
+                free(A_mixed->u16);
+                free(A_mixed->u8);
+                free(A_mixed);
+                free(mask_read);
+                return 1;
+            }
+
+            for (int i = 0; i < nnz_read; i ++)
+            {
+                if (fscanf(fp_matrix_read, "%d\n", &col_id2[i]) != 1) 
+                {
+                    fprintf(stderr, "Error: failed to read col_id2[%d]\n", i);
+                    fclose(fp_matrix_read);
+                    exit(EXIT_FAILURE);
+                }
             }
 
             MP *A_read = malloc(sizeof(MP));
@@ -338,6 +483,7 @@ int main(int argc, char** argv)
                     exit(EXIT_FAILURE);
                 }
             }
+            
 
             fclose(fp_matrix_read);
             double end4 = get_time_ms();
@@ -347,11 +493,11 @@ int main(int argc, char** argv)
             FP_INT *A_tilde = NULL;
 
             double start5 = get_time_ms();
-            A_tilde = mixed_FP(A_read, nnz, mask_read, n_mask_read);
+            A_tilde = mixed_FP(A_read, nnz_read, mask_read, n_mask_read);
 
-            for (int i = 0; i < nnz; i ++)
+            for (int i = 0; i < nnz_read; i ++)
             {
-                A_new[i] = FP_CR3(A_tilde[i]);
+                A[i] = FP_CR3(A_tilde[i]);
             }
             double end5 = get_time_ms();
 
@@ -359,7 +505,7 @@ int main(int argc, char** argv)
 
             // GS
             double start_GS = get_time_ms();
-            interval_GS_tridiag(A_new, b, x2, n_read);
+            interval_GS_CSR(A, idx2, col_id2, b, x2, n_read);
             double end_GS = get_time_ms();
             printf("GS done\n");
 
@@ -390,7 +536,6 @@ int main(int argc, char** argv)
             fclose(fp_time);
 
             free(A);
-            free(A_new);
             free(b);
             free(x1);
             free(x2);
@@ -408,6 +553,10 @@ int main(int argc, char** argv)
             free(A_read->u8);
             free(A_read);
             free(A_tilde);
+            free(idx1);
+            free(col_id1);
+            free(idx2);
+            free(col_id2);           
             break;
         }
 
@@ -418,19 +567,25 @@ int main(int argc, char** argv)
             sprintf(matrix, "GS_fd_matrix_%d.txt", n);
             sprintf(res, "GS_fd_res_%d.txt", n);
     
-            int nnz = 3 * n - 2;
 
-            C_R *A = malloc(nnz * sizeof(C_R));
+            C_R *A = NULL;
+            int *idx1 = malloc((n + 1) * sizeof(int));
+            int *idx2 = malloc((n + 1) * sizeof(int));
+            int *col_id1 = NULL;
+            int *col_id2 = NULL;
             C_R *b = malloc(n * sizeof(C_R));
             C_R *x1 = malloc(n * sizeof(C_R));
             C_R *x2 = malloc(n * sizeof(C_R));
 
+            
+            generate_rhs_ieee(b, n);
+            generate_matrix_CSR_ieee(&A, idx1, &col_id1, n);
+            printf("generated A b\n");
+
+            int nnz = idx1[n] - idx1[0];
             int n_mask = (nnz + 7) >> 3; // ceil(nnz / 8)
             uint8_t *mask = malloc(n_mask * sizeof(uint8_t));
             int count = 0;
-
-            generate_ieee(A, b, n);
-            printf("generated A b\n");
 
             // initialize x
             for (int i = 0; i < n; i ++)
@@ -443,7 +598,7 @@ int main(int argc, char** argv)
             printf("initialized x\n");
 
             // GS ref
-            interval_GS_tridiag(A, b, x1, n);
+            interval_GS_CSR(A, idx1, col_id1, b, x1, n);
             printf("GS ref done\n");
 
             FP_INT_PREC *A_prec = malloc(nnz * sizeof(FP_INT_PREC));
@@ -476,6 +631,16 @@ int main(int argc, char** argv)
             {
                 fprintf(fp_matrix, "%d\n", mask[i]);
             }
+
+            for (int i = 0; i < n + 1; i ++)
+            {
+                fprintf(fp_matrix, "%d\n", idx1[i]);
+            }
+            for (int i = 0; i < nnz; i ++)
+            {
+                fprintf(fp_matrix, "%d\n", col_id1[i]);
+            }
+
             for (int i = 0; i < count_f; i ++)
             {
                 fprintf(fp_matrix, "%.8e\n", A_df->f[i]);
@@ -484,6 +649,7 @@ int main(int argc, char** argv)
             {
                 fprintf(fp_matrix, "%.17e\n", A_df->d[i]);
             }
+            
             
             fclose(fp_matrix);
             double end3 = get_time_ms();
@@ -511,6 +677,10 @@ int main(int argc, char** argv)
                 free(A_prec);
                 free(mask);
                 free(A_df);
+                free(idx1);
+                free(col_id1);
+                free(idx2);
+                free(col_id2);
                 return 1;
             }
 
@@ -538,8 +708,45 @@ int main(int argc, char** argv)
                 }
             }
 
+            for (int i = 0; i < n + 1; i ++)
+            {
+                if (fscanf(fp_matrix_read, "%d\n", &idx2[i]) != 1)
+                {
+                    fprintf(stderr, "Error: failed to read idx2[%d]\n", i);
+                    fclose(fp_matrix_read);
+                    exit(EXIT_FAILURE);
+                }
+            }
+            int nnz_read = idx2[n] - idx2[0];
+            if (nnz_read != nnz)
+            {
+                fprintf(stderr, "Error: nnz mismatch.\n");
+                fclose(fp_matrix_read);
+                free(A);
+                free(b);
+                free(x1);
+                free(x2);
+                free(A_prec);
+                free(mask);
+                free(A_df->d);
+                free(A_df->f);
+                free(A_df);
+                free(mask_read);
+                return 1;
+            }
+            col_id2 = malloc(nnz_read * sizeof(int));
+            for (int i = 0; i < nnz_read; i ++)
+            {
+                if (fscanf(fp_matrix_read, "%d\n", &col_id2[i]) != 1)
+                {
+                    fprintf(stderr, "Error: failed to read col_id2[%d]\n", i);
+                    fclose(fp_matrix_read);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
             int nf_read = count; // number of float needed
-            int nd_read = 3 * n_read - 2 - count; // number of double needed
+            int nd_read = nnz_read - count; // number of double needed
 
             A_read->f = malloc(nf_read * sizeof(float));
             A_read->d = malloc(nd_read * sizeof(double));
@@ -564,6 +771,7 @@ int main(int argc, char** argv)
                 }
             }
             
+            
             fclose(fp_matrix_read);
             double end4 = get_time_ms();
             printf("read matrix A from file\n");
@@ -583,7 +791,7 @@ int main(int argc, char** argv)
 
             // GS
             double start_GS = get_time_ms();
-            interval_GS_tridiag(A, b, x2, n_read);
+            interval_GS_CSR(A, idx2, col_id2, b, x2, n_read);
             double end_GS = get_time_ms();
             printf("GS done\n");
 
@@ -627,6 +835,10 @@ int main(int argc, char** argv)
             free(A_df->f);
             free(A_df);
             free(A_tilde);
+            free(idx1);
+            free(col_id1);
+            free(idx2);
+            free(col_id2);
 
             break;
         }
@@ -638,19 +850,24 @@ int main(int argc, char** argv)
             sprintf(matrix, "GS_u32_matrix_%d.txt", n);
             sprintf(res, "GS_u32_res_%d.txt", n);
 
-            int nnz = 3 * n - 2;
-
-            C_R *A = malloc(nnz * sizeof(C_R));
+            C_R *A = NULL;
+            int *idx1 = malloc((n + 1) * sizeof(int));
+            int *idx2 = malloc((n + 1) * sizeof(int));
+            int *col_id1 = NULL; 
+            int *col_id2 = NULL;
             C_R *b = malloc(n * sizeof(C_R));
             C_R *x1 = malloc(n * sizeof(C_R));
             C_R *x2 = malloc(n * sizeof(C_R));
 
+
+            generate_rhs_ieee(b, n);
+            generate_matrix_CSR_ieee(&A, idx1, &col_id1, n);
+            printf("generated A b\n");
+
+            int nnz = idx1[n] - idx1[0];
             int n_mask = (nnz + 7) >> 3;
             uint8_t *mask = malloc(n_mask * sizeof(uint8_t));
             int count = 0;
-
-            generate_ieee(A, b, n);
-            printf("generated A b\n");
 
             // initialize x
             for (int i = 0; i < n; i ++)
@@ -662,7 +879,7 @@ int main(int argc, char** argv)
             }
 
             // GS ref
-            interval_GS_tridiag(A, b, x1, n);
+            interval_GS_CSR(A, idx1, col_id1, b, x1, n);
             printf("GS ref done\n");
 
             FP_INT_PREC *A_prec = malloc(nnz * sizeof(FP_INT_PREC));
@@ -697,6 +914,15 @@ int main(int argc, char** argv)
             {
                 fprintf(fp_matrix, "%d\n", mask[i]);
             }
+            for (int i = 0; i < n + 1; i ++)
+            {
+                fprintf(fp_matrix, "%d\n", idx1[i]);
+            }
+            for (int i = 0; i < nnz; i ++)
+            {
+                fprintf(fp_matrix, "%d\n", col_id1[i]);
+            }
+
             for (int i = 0; i < count32; i ++)
             {
                 fprintf(fp_matrix, "%u\n", A32[i]);
@@ -728,6 +954,10 @@ int main(int argc, char** argv)
                 free(A_prec);
                 free(mask);
                 free(A32);
+                free(idx1);
+                free(col_id1);
+                free(idx2);
+                free(col_id2);
                 return 1;
             }
             
@@ -743,6 +973,45 @@ int main(int argc, char** argv)
                     exit(EXIT_FAILURE);
                 }
             }
+
+            for (int i = 0; i < n + 1; i ++)
+            {
+                if (fscanf(fp_matrix_read, "%d\n", &idx2[i]) != 1)
+                {
+                    fprintf(stderr, "Error: failed to read idx2[%d]\n", i);
+                    fclose(fp_matrix_read);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            int nnz_read = idx2[n] - idx2[0];
+            if (nnz_read != nnz)
+            {
+                fprintf(stderr, "Error: nnz mismatch.\n");
+                fclose(fp_matrix_read);
+                free(A);
+                free(b);
+                free(x1);
+                free(x2);
+                free(A_prec);
+                free(mask);
+                free(A32);
+                free(idx1);
+                free(col_id1);
+                free(idx2);
+                free(mask_read);
+                return 1;
+            }
+            col_id2 = malloc(nnz_read * sizeof(int));
+            for (int i = 0; i < nnz_read; i ++)
+            {
+                if (fscanf(fp_matrix_read, "%d\n", &col_id2[i]) != 1)
+                {
+                    fprintf(stderr, "Error: failed to read col_id2[%d]\n", i);
+                    fclose(fp_matrix_read);
+                    exit(EXIT_FAILURE);
+                }
+            }
             
             count = 0;
             for (int i = 0; i < n_mask_read; i ++)
@@ -754,7 +1023,7 @@ int main(int argc, char** argv)
                 }
             }
 
-            int n32_read = 2 * (3 * n_read - 2) - count;
+            int n32_read = 2 * nnz_read - count;
 
             uint32_t *A32_read = malloc(n32_read * sizeof(uint32_t));
 
@@ -790,7 +1059,7 @@ int main(int argc, char** argv)
 
             // GS
             double start_GS = get_time_ms();
-            interval_GS_tridiag(A, b, x2, n_read);
+            interval_GS_CSR(A, idx2, col_id2, b, x2, n_read);
             double end_GS = get_time_ms();
             printf("GS done\n");
 
@@ -830,6 +1099,10 @@ int main(int argc, char** argv)
             free(x2);
             free(A_prec);
             free(A_tilde);
+            free(idx1);
+            free(col_id1);
+            free(idx2);
+            free(col_id2);     
             break;
         }
 
@@ -840,17 +1113,23 @@ int main(int argc, char** argv)
             sprintf(matrix, "GS_mpfi_matrix_%d_%d.txt", n, precision);
             sprintf(res, "GS_mpfi_res_%d_%d.txt", n, precision);
 
-            int nnz = 3 * n - 2;
 
-            MPFR_C_R *A = calloc(nnz, sizeof(MPFR_C_R));
-            mpfr_prec_t *pA = malloc(nnz * sizeof(mpfr_prec_t));
-            mpfr_t * A_tilde = calloc(nnz, sizeof(mpfr_t));
+            MPFR_C_R *A = NULL;
+            int *idx1 = malloc((n + 1) * sizeof(int));
+            int *idx2 = malloc((n + 1) * sizeof(int));
+            int *col_id1 = NULL;
+            int *col_id2 = NULL;
             MPFR_C_R *b = calloc(n, sizeof(MPFR_C_R));
 
-            generate_mpfr(A, b, n, precision);
-            
+            generate_rhs_mpfr(b, n, precision);
+            generate_matrix_CSR_mpfr(&A, idx1, &col_id1, n, precision);
             printf("generated A b\n");
 
+            int nnz = idx1[n] - idx1[0];
+
+            mpfr_prec_t *pA = malloc(nnz * sizeof(mpfr_prec_t));
+            mpfr_t * A_tilde = calloc(nnz, sizeof(mpfr_t));
+            
             mpfi_t *A_mpfi = calloc(nnz, sizeof(mpfi_t));
             mpfi_t *A_mpfi2 = calloc(nnz, sizeof(mpfi_t));
             mpfi_t *b_mpfi = calloc(n, sizeof(mpfi_t));
@@ -881,7 +1160,7 @@ int main(int argc, char** argv)
             }
 
             // GS ref
-            interval_GS_tridiag_mpfi(A_mpfi, b_mpfi, x_mpfi, n);
+            interval_GS_CSR_mpfi(A_mpfi, idx1, col_id1, b_mpfi, x_mpfi, n);
             printf("GS ref done\n");
 
             // conversion
@@ -900,6 +1179,14 @@ int main(int argc, char** argv)
             double start2 = get_time_ms();
             FILE *fp_matrix = fopen(matrix, "w");
             fprintf(fp_matrix, "%d\t%d\n", n, nnz);
+            for (int i = 0; i < n + 1; i ++)
+            {
+                fprintf(fp_matrix, "%d\n", idx1[i]);
+            }
+            for (int i = 0; i < nnz; i ++)
+            {
+                fprintf(fp_matrix, "%d\n", col_id1[i]);
+            }
             for (int i = 0; i < nnz; i ++)
             {
                 fprintf(fp_matrix, "%d\n", (int)pA[i]);
@@ -939,6 +1226,26 @@ int main(int argc, char** argv)
                 free(x_mpfi2);
                 return 1;
             }
+            col_id2 = malloc(nnz_read * sizeof(int));
+            for (int i = 0; i < n_read + 1; i ++)
+            {
+                if (fscanf(fp_matrix_read, "%d\n", &idx2[i]) != 1)
+                {
+                    fprintf(stderr, "Error: failed to read idx2[%d]\n", i);
+                    fclose(fp_matrix_read);
+                    exit(EXIT_FAILURE);
+                }
+            }
+            for (int i = 0; i < nnz_read; i ++)
+            {
+                if (fscanf(fp_matrix_read, "%d\n", &col_id2[i]) != 1)
+                {
+                    fprintf(stderr, "Error: failed to read col_id2[%d]\n", i);
+                    fclose(fp_matrix_read);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
             int *pA_read = malloc(nnz_read * sizeof(int));
             mpfr_t *A_tilde_read = calloc(nnz_read, sizeof(mpfr_t));
             for (int i = 0; i < nnz_read; i ++)
@@ -976,7 +1283,7 @@ int main(int argc, char** argv)
 
             // Gauss-Seidel
             double start_GS = get_time_ms();
-            interval_GS_tridiag_mpfi(A_mpfi2, b_mpfi, x_mpfi2, n);
+            interval_GS_CSR_mpfi(A_mpfi2, idx2, col_id2, b_mpfi, x_mpfi2, n);
             double end_GS = get_time_ms();
             printf("GS done\n");
 
@@ -1072,7 +1379,10 @@ int main(int argc, char** argv)
             free(x1);
             free(x2);
             free(A_mpfi2);
-
+            free(idx1);
+            free(col_id1);
+            free(idx2);
+            free(col_id2);
             break;
         }
     }

@@ -724,6 +724,42 @@ void fprint_binary(FILE *fp, double x)
     fprintf(fp, " 2^%d\n", exp);
 }
 
+void print_binary_u32(uint32_t x)
+{
+    for (int i = 31; i >= 0; i --)
+    {
+        int b = (x >> i) & 1;
+        printf("%d", b);
+    }
+}
+
+void fprint_binary_u32(FILE *fp, uint32_t x)
+{
+    for (int i = 31; i >= 0; i --)
+    {
+        int b = (x >> i) & 1;
+        fprintf(fp, "%d", b);
+    }
+}
+
+void print_binary_u8(uint8_t x)
+{
+    for (int i = 7; i >= 0; i --)
+    {
+        int b = (x >> i) & 1;
+        printf("%d", b);
+    }
+}
+
+void fprint_binary_u8(FILE *fp, uint8_t x)
+{
+    for (int i = 7; i >= 0; i --)
+    {
+        int b = (x >> i) & 1;
+        fprintf(fp, "%d", b);
+    }
+}
+
 double get_time_ms() 
 {
     struct timeval tv;
@@ -767,7 +803,7 @@ uint32_t * FP_u32(FP_INT_PREC * c_prec, int nnz, uint8_t * mask, int n_mask, int
             int idx = i * 8 + j;
             if (idx >= nnz) break;
 
-            cast dc;
+            cast dc = { .u64 = 0};
             dc.d = c_prec[idx].center;
 
             if ((mask[i] >> (7 - j)) & 1) 
@@ -1015,11 +1051,9 @@ FP_INT * u32_FP(uint32_t * u32, int nnz, uint8_t * mask, int n_mask)
 
             uint64_t combined = high | low;
 
-            cast dc;
-            dc.u64 = combined;
+            cast dc = { .u64 = combined };
 
             result[idx] = dc.d;
-            printf("Recovered double: %.17e\n", dc.d);
         }
     }
     return result;
@@ -1108,38 +1142,41 @@ FP_INT * mixed_FP(MP * mp, int nnz, uint8_t * mask, int n_mask)
             result[ind1] = dc.d;
         }
 
-        if (m2 == 0x08) 
+        if (ind2 < nnz) 
         {
-            result[ind2] = mp->d[k_d ++];
-        } 
-        else 
-        {
-            dc.u64 = 0;
-            if (m2 & 0x04) 
+            if (m2 == 0x08) 
             {
-                dc.u64 |= (uint64_t)mp->u32[k_u32 ++] << 32;
-                if (m2 & 0x02) 
+                result[ind2] = mp->d[k_d ++];
+            } 
+            else 
+            {
+                dc.u64 = 0;
+                if (m2 & 0x04) 
                 {
-                    dc.u64 |= (uint64_t)mp->u16[k_u16 ++] << 16;
-                    if (m2 & 0x01)
-                        dc.u64 |= (uint64_t)mp->u8[k_u8 ++] << 8;
+                    dc.u64 |= (uint64_t)mp->u32[k_u32 ++] << 32;
+                    if (m2 & 0x02) 
+                    {
+                        dc.u64 |= (uint64_t)mp->u16[k_u16 ++] << 16;
+                        if (m2 & 0x01)
+                            dc.u64 |= (uint64_t)mp->u8[k_u8 ++] << 8;
+                    } 
+                    else if (m2 & 0x01) 
+                    {
+                        dc.u64 |= (uint64_t)mp->u8[k_u8 ++] << 24;
+                    }
                 } 
+                else if (m2 & 0x02) 
+                {
+                    dc.u64 |= (uint64_t)mp->u16[k_u16 ++] << 48;
+                    if (m2 & 0x01)
+                        dc.u64 |= (uint64_t)mp->u8[k_u8 ++] << 40;
+                }    
                 else if (m2 & 0x01) 
                 {
-                    dc.u64 |= (uint64_t)mp->u8[k_u8 ++] << 24;
+                    dc.u64 |= (uint64_t)mp->u8[k_u8 ++] << 56;
                 }
-            } 
-            else if (m2 & 0x02) 
-            {
-                dc.u64 |= (uint64_t)mp->u16[k_u16 ++] << 48;
-                if (m2 & 0x01)
-                    dc.u64 |= (uint64_t)mp->u8[k_u8 ++] << 40;
-            } 
-            else if (m2 & 0x01) 
-            {
-                dc.u64 |= (uint64_t)mp->u8[k_u8 ++] << 56;
+                result[ind2] = dc.d;
             }
-            result[ind2] = dc.d;
         }
     }
     return result;

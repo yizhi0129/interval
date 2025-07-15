@@ -5,6 +5,12 @@
 #define DOUBLE_E 52
 #define DOUBLE_M 11
 
+#define EPS set_pow2(-53)
+#define REALMIN set_pow2(-1022)
+
+#define ITERMAX 15
+#define TOLERANCE set_pow2(-52)
+
 #include <ieee754.h>
 #include <time.h>
 #include <sys/time.h>
@@ -82,6 +88,14 @@ C_R FP_CR3(FP_INT c_tilde);
 void print_binary(double x);
 
 void fprint_binary(FILE *fp, double x);
+
+void print_binary_u32(uint32_t x);
+
+void fprint_binary_u32(FILE *fp, uint32_t x);
+
+void print_binary_u8(uint8_t x);
+
+void fprint_binary_u8(FILE *fp, uint8_t x);
 
 typedef union {
     double d;
