@@ -18,5 +18,5 @@ void interval_GS_CSR_mpfi(mpfi_t *A, int *idx, int *col_id, mpfi_t *b, mpfi_t *x
 
 int check_convergence(mpfi_t *x, mpfi_t *x_prev, int n, double tol);
 
-void cr_lr(MPFR_C_R int_cr, mpfi_t int_lr); 
+void cr_lr(MPFR_C_R * int_cr, mpfi_t int_lr); 
 void lr_cr(mpfi_t int_lr, MPFR_C_R * int_cr);  

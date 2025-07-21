@@ -5,7 +5,7 @@ make clean
 make
 
 
-for i in {1..10}
+for i in {1..8}
 do 
     for j in 100000 10000 1000 100 10
     do
@@ -18,7 +18,7 @@ do
     done
 done
 
-for i in {1..10}
+for i in {1..8}
 do 
     for j in 100000 10000 1000 100 10
     do

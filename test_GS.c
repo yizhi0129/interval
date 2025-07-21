@@ -867,13 +867,13 @@ int main(int argc, char** argv)
             for (int i = 0; i < nnz; i ++)
             {
                 mpfi_init2(A_mpfi[i], precision);
-                cr_lr(A[i], A_mpfi[i]);
+                cr_lr(&A[i], A_mpfi[i]);
             } 
 
             for (int i = 0; i < n; i ++)
             {
                 mpfi_init2(b_mpfi[i], precision);
-                cr_lr(b[i], b_mpfi[i]);
+                cr_lr(&b[i], b_mpfi[i]);
                 mpfi_init2(x_mpfi[i], precision);
                 mpfi_interv_d(x_mpfi[i], 0.0, 1.0); // Initialize x to [0, 1]
                 mpfi_init2(x_mpfi2[i], precision);
@@ -966,7 +966,7 @@ int main(int argc, char** argv)
                 MPFR_C_R tmp;
                 mpfi_init2(A_mpfi2[i], (mpfr_prec_t)pA_read[i]);
                 tmp = read_mpfr_uls3(A_tilde_read[i]);
-                cr_lr(tmp, A_mpfi2[i]);
+                cr_lr(&tmp, A_mpfi2[i]);
                 mpfr_clear(tmp.center);
                 mpfr_clear(tmp.radius);
             }
@@ -1017,13 +1017,13 @@ int main(int argc, char** argv)
             mpfr_div_ui(bias, bias, n_read, MPFR_RNDN);
             mpfr_div_ui(dilat, dilat, n_read, MPFR_RNDN);
 
-            mpfr_out_str(fp_res, 10, 10, bias, MPFR_RNDN); 
+            mpfr_out_str(fp_res, 10, 17, bias, MPFR_RNDN); 
             fputc('\t', fp_res);
-            mpfr_out_str(fp_res, 10, 10, max_bias, MPFR_RNDN);
+            mpfr_out_str(fp_res, 10, 17, max_bias, MPFR_RNDN);
             fputc('\t', fp_res);
-            mpfr_out_str(fp_res, 10, 10, dilat, MPFR_RNDN);
+            mpfr_out_str(fp_res, 10, 17, dilat, MPFR_RNDN);
             fputc('\t', fp_res);
-            mpfr_out_str(fp_res, 10, 10, max_dilat, MPFR_RNDN);
+            mpfr_out_str(fp_res, 10, 17, max_dilat, MPFR_RNDN);
             fputc('\n', fp_res);
             fclose(fp_res);
            

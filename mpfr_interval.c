@@ -72,20 +72,20 @@ MPFR_C_R read_mpfr_uls3(mpfr_t c_tilde)
     return int_cr;
 }
 
-void cr_lr(MPFR_C_R int_cr, mpfi_t int_lr)
+void cr_lr(MPFR_C_R * int_cr, mpfi_t int_lr)
 {
     mpfr_t lo, hi;
-    mpfr_inits2(mpfr_get_prec(int_cr.center), lo, hi, NULL);
+    mpfr_inits2(mpfr_get_prec(int_cr->center), lo, hi, NULL);
 
-    mpfr_sub(lo, int_cr.center, int_cr.radius, MPFR_RNDD);
-    mpfr_add(hi, int_cr.center, int_cr.radius, MPFR_RNDU);
+    mpfr_sub(lo, int_cr->center, int_cr->radius, MPFR_RNDD);
+    mpfr_add(hi, int_cr->center, int_cr->radius, MPFR_RNDU);
 
     mpfi_interv_fr(int_lr, lo, hi); 
 
     mpfr_clears(lo, hi, NULL);
 }
 
-void lr_cr(mpfi_t int_lr, MPFR_C_R *int_cr) 
+void lr_cr(mpfi_t int_lr, MPFR_C_R * int_cr) 
 {
     mpfr_t a, b, tmp;
     mpfr_inits2(mpfi_get_prec(int_lr), a, b, tmp, NULL);

@@ -25,66 +25,47 @@ void generate_rhs_ieee(C_R *b, int n)
 }
 
 
-// TODO: without mask
 void generate_matrix_CSR_ieee(C_R **A, int *idx, int **col_id, int n)
 {
     const double r_exp_min = -52.0;
     const double r_exp_max = -5.0; 
     
     idx[0] = 0;
+    int pos = 0;
 
     srand(get_time_ms());
 
-    uint64_t N = n * n;
-    uint64_t n_mask = (N + 7) >> 3; // ceil(N / 8)
-    uint8_t *mask = (uint8_t *)calloc(n_mask, sizeof(uint8_t));
-    int count = 0;
+    // suppose no more than 5 non-zero entries per row
+    int max_nnz = 5 * n;
 
-    for (int i = 0; i < n; i ++) 
-    {
-        uint64_t i_mask = i * n + i;
-        mask[i_mask >> 3] |= (1 << (7 - (i_mask & 0b111)));
-    }
-
-    for (int i = 0; i < n; i ++) 
-    {
-        for (int j = 0; j < n; j ++) 
-        {
-            if (j != i && ((double)rand() / RAND_MAX) < (1.0 / n)) 
-            {
-                uint64_t i_mask = i * n + j;
-                mask[i_mask >> 3] |= (1 << (7 - (i_mask & 0b111)));
-            }
-        }
-    }
-
-    for (int i = 0; i < n_mask; i ++) 
-    {
-        count += __builtin_popcount(mask[i]);
-    }
-
-    *A = (C_R *)malloc(count * sizeof(C_R));
-    *col_id = (int *)malloc(count * sizeof(int));
-
-    int pos = 0;
+    C_R *A_tmp = (C_R *)malloc(max_nnz * sizeof(C_R));
+    int *col_id_tmp = (int *)malloc(max_nnz * sizeof(int));
 
     for (int i = 0; i < n; i ++)
     {
         for (int j = 0; j < n; j ++)
         {
-            uint64_t i_mask = i * n + j;
-            if (mask[i_mask >> 3] & (1 << (7 - (i_mask & 0b111))))
+            if (j == i)
             {
-                (*A)[pos].center = (j == i) ? 4.0 : -1.0;
+                A_tmp[pos].center = 4.0;
                 double r_power = r_exp_min + ((double)rand() / RAND_MAX) * (r_exp_max - r_exp_min);
-                (*A)[pos].radius = pow(2, r_power) * fabs((*A)[pos].center);
-                (*col_id)[pos] = j;
+                A_tmp[pos].radius = pow(2, r_power) * fabs(A_tmp[pos].center);
+                col_id_tmp[pos] = j;
+                pos ++;
+            }
+            else if ((double)rand() / RAND_MAX < (1.0 / n))
+            {
+                A_tmp[pos].center = -1.0;
+                double r_power = r_exp_min + ((double)rand() / RAND_MAX) * (r_exp_max - r_exp_min);
+                A_tmp[pos].radius = pow(2, r_power) * fabs(A_tmp[pos].center);
+                col_id_tmp[pos] = j;
                 pos ++;
             }
         }
         idx[i + 1] = pos;
     }
-    free(mask);
+    *A = (C_R *)realloc(A_tmp, pos * sizeof(C_R));
+    *col_id = (int *)realloc(col_id_tmp, pos * sizeof(int));
 }
 
 
@@ -128,33 +109,24 @@ void generate_rhs_mpfr(MPFR_C_R *b, int n, int precision)
     gmp_randclear(rstate);
 }
 
-
+// precision > 5
 void generate_matrix_CSR_mpfr(MPFR_C_R **A, int *idx, int **col_id, int n, int precision)
 {
-    if (precision < 1) precision = 53;
+    if (precision <= 5) precision = 53;
 
     const double r_exp_min = (double) - precision;
     const double r_exp_max = -5.0; // 0.03125
     const double r_exp_range = r_exp_max - r_exp_min;
 
     idx[0] = 0;
+    int pos = 0;
 
     srand(get_time_ms());
 
-    int N = n * n;
-    bool *mask = (bool *)calloc(N, sizeof(bool));
-    int count = 0;
-    for (int i = 0; i < N; i ++)
-    {
-        if (i % n == 0 || (double)rand()/RAND_MAX < (1.0 / n))
-        {
-            mask[i] = true;
-            count ++;
-        }
-    }
+    int max_nnz = 5 * n;
 
-    *A = (MPFR_C_R *)malloc(count * sizeof(MPFR_C_R));
-    *col_id = (int *)malloc(count * sizeof(int));
+    MPFR_C_R *A_tmp = (MPFR_C_R *)malloc(max_nnz * sizeof(MPFR_C_R));
+    int *col_id_tmp = (int *)malloc(max_nnz * sizeof(int));
 
     mpfr_prec_t prec = (mpfr_prec_t) precision;
 
@@ -162,11 +134,14 @@ void generate_matrix_CSR_mpfr(MPFR_C_R **A, int *idx, int **col_id, int n, int p
     gmp_randinit_default(rstate);
     gmp_randseed_ui(rstate, (unsigned long) get_time_ms());
 
-    mpfr_t rand, r_power, r_range, r_val, abs_c, c_val;
-    mpfr_inits2(prec, rand, r_power, r_range, r_val, abs_c, c_val, NULL);
+    mpfr_t random, r_power, r_range, r_val, abs_c, c_val;
+    mpfr_inits2(prec, random, r_power, r_range, r_val, abs_c, c_val, NULL);
     mpfr_set_d(r_range, r_exp_range, MPFR_RNDN);
-   
-    int pos = 0;
+
+    for (int i = 0; i < max_nnz; i ++)
+    {
+        mpfr_inits2(prec, A_tmp[i].center, A_tmp[i].radius, NULL);
+    }
 
     for (int i = 0; i < n; i ++) 
     {
@@ -174,46 +149,46 @@ void generate_matrix_CSR_mpfr(MPFR_C_R **A, int *idx, int **col_id, int n, int p
         {
             if (j == i)
             {
-                mpfr_inits2(prec, (*A)[pos].center, (*A)[pos].radius, NULL);
-                mpfr_set_d((*A)[pos].center, 4.0, MPFR_RNDN);
-                mpfr_urandomb(rand, rstate);
+                mpfr_set_d(A_tmp[pos].center, 4.0, MPFR_RNDN);
+                mpfr_urandomb(random, rstate);
                 mpfr_set_d(c_val, 4.0, MPFR_RNDN);
                 mpfr_abs(abs_c, c_val, MPFR_RNDN);
 
                 mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
-                mpfr_fma(r_power, rand, r_range, r_power, MPFR_RNDN);
+                mpfr_fma(r_power, random, r_range, r_power, MPFR_RNDN);
                 mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN);
                 mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);
 
-                mpfr_set((*A)[pos].radius, r_val, MPFR_RNDN);
-                (*col_id)[pos] = j;
+                mpfr_set(A_tmp[pos].radius, r_val, MPFR_RNDN);
+                col_id_tmp[pos] = j;
                 pos ++;
             }
             
-            else if (mask[i * n + j])
+            else if ((double)rand() / RAND_MAX < (1.0 / n))
             {
-                mpfr_inits2(prec, (*A)[pos].center, (*A)[pos].radius, NULL);
-                mpfr_set_d((*A)[pos].center, -1.0, MPFR_RNDN);
-                mpfr_urandomb(rand, rstate);
+                mpfr_set_d(A_tmp[pos].center, -1.0, MPFR_RNDN);
+                mpfr_urandomb(random, rstate);
                 mpfr_set_d(c_val, -1.0, MPFR_RNDN);
                 mpfr_abs(abs_c, c_val, MPFR_RNDN);
 
                 mpfr_set_d(r_power, r_exp_min, MPFR_RNDN);
-                mpfr_fma(r_power, rand, r_range, r_power, MPFR_RNDN);
+                mpfr_fma(r_power, random, r_range, r_power, MPFR_RNDN);
                 mpfr_ui_pow(r_val, 2, r_power, MPFR_RNDN);
                 mpfr_mul(r_val, r_val, abs_c, MPFR_RNDN);
 
-                mpfr_set((*A)[pos].radius, r_val, MPFR_RNDN);
-                (*col_id)[pos] = j;
+                mpfr_set(A_tmp[pos].radius, r_val, MPFR_RNDN);
+                col_id_tmp[pos] = j;
                 pos ++;
             }          
         }
         idx[i + 1] = pos;       
     }
 
-    free(mask);
-    mpfr_clears(rand, r_power, r_range, r_val, abs_c, c_val, NULL);
+    mpfr_clears(random, r_power, r_range, r_val, abs_c, c_val, NULL);
     gmp_randclear(rstate);
+
+    *A = (MPFR_C_R *)realloc(A_tmp, pos * sizeof(MPFR_C_R));
+    *col_id = (int *)realloc(col_id_tmp, pos * sizeof(int));
 }
 
 
@@ -252,10 +227,10 @@ int main(int argc, char** argv)
             // initialize x
             for (int i = 0; i < n; i ++)
             {
-                x1[i].center = 0.5;
-                x1[i].radius = 0.5;
-                x2[i].center = 0.5;
-                x2[i].radius = 0.5;
+                x1[i].center = 0.7;
+                x1[i].radius = 0.7;
+                x2[i].center = 0.7;
+                x2[i].radius = 0.7;
             }
             printf("initialized x\n");
 
@@ -590,10 +565,10 @@ int main(int argc, char** argv)
             // initialize x
             for (int i = 0; i < n; i ++)
             {
-                x1[i].center = 0.5;
-                x1[i].radius = 0.5;
-                x2[i].center = 0.5;
-                x2[i].radius = 0.5;
+                x1[i].center = 0.7;
+                x1[i].radius = 0.7;
+                x2[i].center = 0.7;
+                x2[i].radius = 0.7;
             }
             printf("initialized x\n");
 
@@ -872,10 +847,10 @@ int main(int argc, char** argv)
             // initialize x
             for (int i = 0; i < n; i ++)
             {
-                x1[i].center = 0.5;
-                x1[i].radius = 0.5;
-                x2[i].center = 0.5;
-                x2[i].radius = 0.5;
+                x1[i].center = 0.7;
+                x1[i].radius = 0.7;
+                x2[i].center = 0.7;
+                x2[i].radius = 0.7;
             }
 
             // GS ref
@@ -1145,18 +1120,23 @@ int main(int argc, char** argv)
 
             for (int i = 0; i < nnz; i ++)
             {
+                if (A[i].center->_mpfr_d == NULL || A[i].radius->_mpfr_d == NULL) 
+                {
+                    printf("Error: A[%d] not initialized!\n", i);
+                    exit(1);
+                }
                 mpfi_init2(A_mpfi[i], precision);
-                cr_lr(A[i], A_mpfi[i]);
+                cr_lr(&A[i], A_mpfi[i]);
             } 
 
             for (int i = 0; i < n; i ++)
             {
                 mpfi_init2(b_mpfi[i], precision);
-                cr_lr(b[i], b_mpfi[i]);
+                cr_lr(&b[i], b_mpfi[i]);
                 mpfi_init2(x_mpfi[i], precision);
-                mpfi_interv_d(x_mpfi[i], 0.0, 1.0); // Initialize x to [0, 1]
+                mpfi_interv_d(x_mpfi[i], 0.0, 1.4); // Initialize x to [0, 1.4]
                 mpfi_init2(x_mpfi2[i], precision);
-                mpfi_interv_d(x_mpfi2[i], 0.0, 1.0); // Initialize x2 to [0, 1]
+                mpfi_interv_d(x_mpfi2[i], 0.0, 1.4); // Initialize x2 to [0, 1.4]
             }
 
             // GS ref
@@ -1273,7 +1253,7 @@ int main(int argc, char** argv)
                 MPFR_C_R tmp;
                 mpfi_init2(A_mpfi2[i], (mpfr_prec_t)pA_read[i]);
                 tmp = read_mpfr_uls3(A_tilde_read[i]);
-                cr_lr(tmp, A_mpfi2[i]);
+                cr_lr(&tmp, A_mpfi2[i]);
                 mpfr_clear(tmp.center);
                 mpfr_clear(tmp.radius);
             }
@@ -1324,13 +1304,13 @@ int main(int argc, char** argv)
             mpfr_div_ui(bias, bias, n_read, MPFR_RNDN);
             mpfr_div_ui(dilat, dilat, n_read, MPFR_RNDN);
 
-            mpfr_out_str(fp_res, 10, 10, bias, MPFR_RNDN); 
+            mpfr_out_str(fp_res, 10, 17, bias, MPFR_RNDN); 
             fputc('\t', fp_res);
-            mpfr_out_str(fp_res, 10, 10, max_bias, MPFR_RNDN);
+            mpfr_out_str(fp_res, 10, 17, max_bias, MPFR_RNDN);
             fputc('\t', fp_res);
-            mpfr_out_str(fp_res, 10, 10, dilat, MPFR_RNDN);
+            mpfr_out_str(fp_res, 10, 17, dilat, MPFR_RNDN);
             fputc('\t', fp_res);
-            mpfr_out_str(fp_res, 10, 10, max_dilat, MPFR_RNDN);
+            mpfr_out_str(fp_res, 10, 17, max_dilat, MPFR_RNDN);
             fputc('\n', fp_res);
             fclose(fp_res);
            
