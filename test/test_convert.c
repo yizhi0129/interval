@@ -82,7 +82,7 @@ int main(int argc, char **argv)
         test_int[i].radius = r1;
 
         double c_power2 = c_exp_min + ((double)rand() / RAND_MAX) * (c_exp_max - c_exp_min);
-        double c2 =  - ((double)rand() / RAND_MAX) * pow(10, c_power2);   
+        double c2 = - ((double)rand() / RAND_MAX) * pow(10, c_power2);   
         double r_power2 = r_exp_min + ((double)rand() / RAND_MAX) * (r_exp_max - r_exp_min);
         double r2 = pow(10, r_power2) * fabs(c2);     
         test_int[i + N].center = c2;

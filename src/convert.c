@@ -705,7 +705,7 @@ void print_binary(double x)
         int b = read_m_bit(x, i);
         printf("%d", b);
     }
-    printf(" 2^%d", exp);
+    printf(" 2^%d\n", exp);
 }
 
 void fprint_binary(FILE *fp, double x)
