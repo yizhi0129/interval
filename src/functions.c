@@ -223,7 +223,7 @@ C_R interval_add(C_R x, C_R y)
 {
     double center = x.center + y.center;
     fesetround(FE_UPWARD);
-    double radius = x.radius + y.radius;
+    double radius = x.radius + y.radius + fabs(center) * EPS;
     fesetround(FE_TONEAREST);
     return (C_R){center, radius};
 }
@@ -232,7 +232,7 @@ C_R interval_sub(C_R x, C_R y)
 {
     double center = x.center - y.center;
     fesetround(FE_UPWARD);
-    double radius = x.radius + y.radius;
+    double radius = x.radius + y.radius + fabs(center) * EPS;
     fesetround(FE_TONEAREST);
     return (C_R){center, radius};
 }
@@ -241,7 +241,7 @@ C_R interval_mult(C_R x, C_R y)
 {
     double center = x.center * y.center;
     fesetround(FE_UPWARD);
-    double radius = fabs(x.center * y.radius) + fabs(y.center * x.radius) + x.radius * y.radius;
+    double radius = ETA + EPS * fabs(center) + (fabs(x.center) + x.radius) * y.radius + x.radius * fabs(y.center);
     fesetround(FE_TONEAREST);
     return (C_R){center, radius};
 }

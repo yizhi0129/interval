@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define ETA pow(2, -1074)
+
 typedef double FP_INT;
 
 typedef struct {
