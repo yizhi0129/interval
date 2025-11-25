@@ -8,7 +8,7 @@
 
 #define MAX_RATE 1e+300
 
-// old conversion
+// new conversion 3 * uls
 
 int main(int argc, char **argv)
 {
@@ -25,8 +25,8 @@ int main(int argc, char **argv)
     char res22[64];
     char res23[64];
     char res24[64];
-    char dil1[64];
-    char dil2[64];
+    //char dil1[64];
+    //char dil2[64];
 
     sprintf(file1, "matprod_time1_%d.txt", n);
     sprintf(file2, "matprod_time2_%d.txt", n);
@@ -38,8 +38,8 @@ int main(int argc, char **argv)
     sprintf(res22, "C2_2_%d.txt", n);
     sprintf(res23, "C3_2_%d.txt", n);
     sprintf(res24, "C4_2_%d.txt", n);
-    sprintf(dil1, "dil_1_%d.txt", n);
-    sprintf(dil2, "dil_2_%d.txt", n);
+    //sprintf(dil1, "dil_1_%d.txt", n);
+    //sprintf(dil2, "dil_2_%d.txt", n);
 
     double *mAp = malloc(N * sizeof(double));
     double *rAp = malloc(N * sizeof(double));
@@ -93,6 +93,16 @@ int main(int argc, char **argv)
     double *iC4 = malloc(N * sizeof(double));
     double *sC4 = malloc(N * sizeof(double));
 
+    double *ref_mC1 = malloc(N * sizeof(double));
+    double *ref_rC1 = malloc(N * sizeof(double));
+    double *ref_mC2 = malloc(N * sizeof(double));
+    double *ref_rC2 = malloc(N * sizeof(double));
+    double *ref_mC3 = malloc(N * sizeof(double));
+    double *ref_rC3 = malloc(N * sizeof(double));
+    double *ref_mC4 = malloc(N * sizeof(double));
+    double *ref_rC4 = malloc(N * sizeof(double));
+    
+
     const double c_exp_min = -2.0;
     const double c_exp_max = 2.0;
     const double r_exp_min = -10.0;
@@ -140,6 +150,9 @@ int main(int argc, char **argv)
     mat_is_cr(iAp, sAp, iBp, sBp, mAp, rAp, mBp, rBp, n);
     mat_is_cr(iAm, sAm, iBm, sBm, mAm, rAm, mBm, rBm, n);
 
+    mat_is_cr(iC1, sC1, iC2, sC2, ref_mC1, ref_rC1, ref_mC2, ref_rC2, n);
+    mat_cr_is(iC3, sC3, iC4, sC4, ref_mC3, ref_rC3, ref_mC4, ref_rC4, n);
+
     // calculation
     double start2 = get_time_ms();
     int_mat_mult(mAp, rAp, mBp, rBp, mC1, rC1, n);
@@ -169,20 +182,20 @@ int main(int argc, char **argv)
     double start6 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
-        mC1_tilde[i] = CR_FP1(C1[i]);
-        mC2_tilde[i] = CR_FP1(C2[i]);
-        mC3_tilde[i] = CR_FP1(C3[i]);
-        mC4_tilde[i] = CR_FP1(C4[i]);             
+        mC1_tilde[i] = CR_FP1_adjbis(C1[i]);
+        mC2_tilde[i] = CR_FP1_adjbis(C2[i]);
+        mC3_tilde[i] = CR_FP1_adjbis(C3[i]);
+        mC4_tilde[i] = CR_FP1_adjbis(C4[i]);             
     }
     double end6 = get_time_ms();
 
     // read r_tilde
     for (int i = 0; i < N; i ++)
     {
-        rC1_tilde[i] = FP_CR(mC1_tilde[i]).radius;
-        rC2_tilde[i] = FP_CR(mC2_tilde[i]).radius;
-        rC3_tilde[i] = FP_CR(mC3_tilde[i]).radius;
-        rC4_tilde[i] = FP_CR(mC4_tilde[i]).radius; 
+        rC1_tilde[i] = FP_CR3(mC1_tilde[i]).radius;
+        rC2_tilde[i] = FP_CR3(mC2_tilde[i]).radius;
+        rC3_tilde[i] = FP_CR3(mC3_tilde[i]).radius;
+        rC4_tilde[i] = FP_CR3(mC4_tilde[i]).radius; 
     }
 
     FILE *result1[4];
@@ -196,10 +209,12 @@ int main(int argc, char **argv)
     double r1_max = 0.0, r2_max = 0.0, r3_max = 0.0, r4_max = 0.0;
     double r1_min = MAX_RATE, r2_min = MAX_RATE, r3_min = MAX_RATE, r4_min = MAX_RATE;
 
+    double b1_max = 0.0, b2_max = 0.0, b3_max = 0.0, b4_max = 0.0;
+
     FILE *f = fopen("err1.txt", "a");
     FILE *freq1 = fopen("freq1.txt", "a");
 
-    FILE *d1 = fopen(dil1, "a");
+    //FILE *d1 = fopen(dil1, "a");
 
     for (int i = 0; i < N; i ++)
     {
@@ -223,8 +238,13 @@ int main(int argc, char **argv)
         double r3_rate = rC3_tilde[i] / rC3[i];
         double r4_rate = rC4_tilde[i] / rC4[i];
 
-        fprintf(d1, "%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%d\n", e1_rate, r1_rate, 
-            e2_rate, r2_rate, e3_rate, r3_rate, e4_rate, r4_rate, i);
+        double b1 = fabs((mC1_tilde[i] - ref_mC1[i]) / ref_mC1[i]);
+        double b2 = fabs((mC2_tilde[i] - ref_mC2[i]) / ref_mC2[i]);
+        double b3 = fabs((mC3_tilde[i] - ref_mC3[i]) / ref_mC3[i]);
+        double b4 = fabs((mC4_tilde[i] - ref_mC4[i]) / ref_mC4[i]);
+
+        //fprintf(d1, "%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%d\n", e1_rate, r1_rate, 
+        //    e2_rate, r2_rate, e3_rate, r3_rate, e4_rate, r4_rate, i);
 
         if (r1_rate > 1000.0)
         {
@@ -319,15 +339,39 @@ int main(int argc, char **argv)
         r3_min = fmin(r3_min, r3_rate);
         r4_max = fmax(r4_max, r4_rate);
         r4_min = fmin(r4_min, r4_rate);
+
+        b1_max = fmax(b1, b1_max);
+        b2_max = fmax(b2, b2_max);
+        b3_max = fmax(b3, b3_max);
+        b4_max = fmax(b4, b4_max);
     }
 
-    fclose(d1);
+    //fclose(d1);
     fclose(freq1);
 
-    fprintf(result1[0], "%.6e\t%.6e\t%.6e\t%.6e\n", e1_max, e1_min, r1_max, r1_min);
-    fprintf(result1[1], "%.6e\t%.6e\t%.6e\t%.6e\n", e2_max, e2_min, r2_max, r2_min);
-    fprintf(result1[2], "%.6e\t%.6e\t%.6e\t%.6e\n", e3_max, e3_min, r3_max, r3_min);
-    fprintf(result1[3], "%.6e\t%.6e\t%.6e\t%.6e\n", e4_max, e4_min, r4_max, r4_min);
+    /*
+    for (int i = 0; i < N; i += 80000)
+    {
+        printf("\nmC3 = ");
+        print_binary(mC3[i]);
+        printf("\nrC3 = ");
+        print_binary(rC3[i]);
+        printf("\nmC3_tilde = ");
+        print_binary(mC3_tilde[i]);
+        printf("\nmC4 = ");
+        print_binary(mC4[i]);
+        printf("\nrC4 = ");
+        print_binary(rC4[i]);
+        printf("\nmC4_tilde = ");
+        print_binary(mC4_tilde[i]);
+        printf("\n");
+    }
+    */
+
+    fprintf(result1[0], "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n", e1_max, e1_min, r1_max, r1_min, b1_max);
+    fprintf(result1[1], "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n", e2_max, e2_min, r2_max, r2_min, b2_max);
+    fprintf(result1[2], "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n", e3_max, e3_min, r3_max, r3_min, b3_max);
+    fprintf(result1[3], "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n", e4_max, e4_min, r4_max, r4_min, b4_max);
 
     fclose(result1[0]);
     fclose(result1[1]);
@@ -355,13 +399,13 @@ int main(int argc, char **argv)
         double c4 =  - ((double)rand() / RAND_MAX) * pow(10, c_power4);   
 
         mAp[i] = c1;
-        rAp[i] = 2 * FP_CR(c1).radius;
+        rAp[i] = FP_CR3(c1).radius;
         mAm[i] = c2;
-        rAm[i] = 2 * FP_CR(c2).radius;
+        rAm[i] = FP_CR3(c2).radius;
         mBp[i] = c3;
-        rBp[i] = 2 * FP_CR(c3).radius;
+        rBp[i] = FP_CR3(c3).radius;
         mBm[i] = c4;
-        rBm[i] = 2 * FP_CR(c4).radius;
+        rBm[i] = FP_CR3(c4).radius;
     }
 
     mat_cr_is(mAp, rAp, mBp, rBp, iAp, sAp, iBp, sBp, n);
@@ -371,6 +415,9 @@ int main(int argc, char **argv)
     ref2_mm(iAm, sAm, iBm, sBm, iC2, sC2, n);
     ref3_pm(iAp, sAp, iBm, sBm, iC3, sC3, n);
     ref4_mp(iAm, sAm, iBp, sBp, iC4, sC4, n);
+
+    mat_is_cr(iC1, sC1, iC2, sC2, ref_mC1, ref_rC1, ref_mC2, ref_rC2, n);
+    mat_cr_is(iC3, sC3, iC4, sC4, ref_mC3, ref_rC3, ref_mC4, ref_rC4, n);
 
     // calculation
     double start7 = get_time_ms();
@@ -401,20 +448,20 @@ int main(int argc, char **argv)
     double start11 = get_time_ms();
     for (int i = 0; i < N; i ++)
     {
-        mC1_tilde[i] = CR_FP1(C1[i]);
-        mC2_tilde[i] = CR_FP1(C2[i]);
-        mC3_tilde[i] = CR_FP1(C3[i]);
-        mC4_tilde[i] = CR_FP1(C4[i]);             
+        mC1_tilde[i] = CR_FP1_adjbis(C1[i]);
+        mC2_tilde[i] = CR_FP1_adjbis(C2[i]);
+        mC3_tilde[i] = CR_FP1_adjbis(C3[i]);
+        mC4_tilde[i] = CR_FP1_adjbis(C4[i]);             
     }
     double end11 = get_time_ms();
     
     // read r_tilde
     for (int i = 0; i < N; i ++)
     {
-        rC1_tilde[i] = FP_CR(mC1_tilde[i]).radius;
-        rC2_tilde[i] = FP_CR(mC2_tilde[i]).radius;
-        rC3_tilde[i] = FP_CR(mC3_tilde[i]).radius;
-        rC4_tilde[i] = FP_CR(mC4_tilde[i]).radius; 
+        rC1_tilde[i] = FP_CR3(mC1_tilde[i]).radius;
+        rC2_tilde[i] = FP_CR3(mC2_tilde[i]).radius;
+        rC3_tilde[i] = FP_CR3(mC3_tilde[i]).radius;
+        rC4_tilde[i] = FP_CR3(mC4_tilde[i]).radius; 
     }
 
     FILE *result2[4];
@@ -428,10 +475,12 @@ int main(int argc, char **argv)
     r1_max = 0.0, r2_max = 0.0, r3_max = 0.0, r4_max = 0.0;
     r1_min = MAX_RATE, r2_min = MAX_RATE, r3_min = MAX_RATE, r4_min = MAX_RATE;
 
+    b1_max = 0.0, b2_max = 0.0, b3_max = 0.0, b4_max = 0.0;
+
     FILE *f2 = fopen("err2.txt", "a");
     FILE *freq2 = fopen("freq2.txt", "a");
 
-    FILE *d2 = fopen(dil2, "a");
+    //FILE *d2 = fopen(dil2, "a");
 
     for (int i = 0; i < N; i ++)
     {
@@ -455,8 +504,13 @@ int main(int argc, char **argv)
         double r3_rate = rC3_tilde[i] / rC3[i];
         double r4_rate = rC4_tilde[i] / rC4[i];
 
-        fprintf(d2, "%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%d\n", e1_rate, r1_rate, 
-            e2_rate, r2_rate, e3_rate, r3_rate, e4_rate, r4_rate, i);
+        double b1 = fabs((mC1_tilde[i] - ref_mC1[i]) / ref_mC1[i]);
+        double b2 = fabs((mC2_tilde[i] - ref_mC2[i]) / ref_mC2[i]);
+        double b3 = fabs((mC3_tilde[i] - ref_mC3[i]) / ref_mC3[i]);
+        double b4 = fabs((mC4_tilde[i] - ref_mC4[i]) / ref_mC4[i]);
+
+        //fprintf(d2, "%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%d\n", e1_rate, r1_rate, 
+        //    e2_rate, r2_rate, e3_rate, r3_rate, e4_rate, r4_rate, i);
 
         if (r1_rate > 1000.0)
         {
@@ -551,15 +605,39 @@ int main(int argc, char **argv)
         r3_min = fmin(r3_min, r3_rate);
         r4_max = fmax(r4_max, r4_rate);
         r4_min = fmin(r4_min, r4_rate);
+
+        b1_max = fmax(b1, b1_max);
+        b2_max = fmax(b2, b2_max);
+        b3_max = fmax(b3, b3_max);
+        b4_max = fmax(b4, b4_max);
     }
 
-    fclose(d2);
+    //fclose(d2);
     fclose(freq2);
 
-    fprintf(result2[0], "%.6e\t%.6e\t%.6e\t%.6e\n", e1_max, e1_min, r1_max, r1_min);
-    fprintf(result2[1], "%.6e\t%.6e\t%.6e\t%.6e\n", e2_max, e2_min, r2_max, r2_min);
-    fprintf(result2[2], "%.6e\t%.6e\t%.6e\t%.6e\n", e3_max, e3_min, r3_max, r3_min);
-    fprintf(result2[3], "%.6e\t%.6e\t%.6e\t%.6e\n", e4_max, e4_min, r4_max, r4_min);
+    /*
+    for (int i = 0; i < N; i += 80000)
+    {
+        printf("\nmC3 = ");
+        print_binary(mC3[i]);
+        printf("\nrC3 = ");
+        print_binary(rC3[i]);
+        printf("\nmC3_tilde = ");
+        print_binary(mC3_tilde[i]);
+        printf("\nmC4 = ");
+        print_binary(mC4[i]);
+        printf("\nrC4 = ");
+        print_binary(rC4[i]);
+        printf("\nmC4_tilde = ");
+        print_binary(mC4_tilde[i]);
+        printf("\n");
+    }
+    */
+
+    fprintf(result2[0], "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n", e1_max, e1_min, r1_max, r1_min, b1_max);
+    fprintf(result2[1], "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n", e2_max, e2_min, r2_max, r2_min, b2_max);
+    fprintf(result2[2], "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n", e3_max, e3_min, r3_max, r3_min, b3_max);
+    fprintf(result2[3], "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n", e4_max, e4_min, r4_max, r4_min, b4_max);
 
     fclose(result2[0]);
     fclose(result2[1]);

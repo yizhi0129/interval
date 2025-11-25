@@ -206,9 +206,9 @@ int main(int argc, char** argv)
     {
         case 0: // mixed precision storage
         {
-            sprintf(time, "GS_mixed_time_%d.txt", n);
-            sprintf(matrix, "GS_mixed_matrix_%d.txt", n);
-            sprintf(res, "GS_mixed_res_%d.txt", n);
+            sprintf(time, "GS_csr_mixed_time_%d.txt", n);
+            sprintf(matrix, "GS_csr_mixed_matrix_%d.txt", n);
+            sprintf(res, "GS_csr_mixed_res_%d.txt", n);
 
             C_R *A = NULL;
             int *idx1 = malloc((n + 1) * sizeof(int));
@@ -222,7 +222,7 @@ int main(int argc, char** argv)
 
             generate_rhs_ieee(b, n);
             generate_matrix_CSR_ieee(&A, idx1, &col_id1, n);
-            printf("generated A b\n");
+            //printf("generated A b\n");
 
             // initialize x
             for (int i = 0; i < n; i ++)
@@ -232,11 +232,11 @@ int main(int argc, char** argv)
                 x2[i].center = 0.7;
                 x2[i].radius = 0.7;
             }
-            printf("initialized x\n");
+            //printf("initialized x\n");
 
             // GS ref 
             interval_GS_CSR(A, idx1, col_id1, b, x1, n);
-            printf("GS ref done\n");
+            //printf("GS ref done\n");
 
             // Convert C_R to FP_INT_PREC
             int nnz = idx1[n] - idx1[0];
@@ -247,7 +247,7 @@ int main(int argc, char** argv)
                 A_prec[i] = CR_FP_p(A[i]);
             }
             double end1 = get_time_ms();
-            printf("converted C_R to FP_INT_PREC\n");
+            //printf("converted C_R to FP_INT_PREC\n");
 
             int n_mask = (nnz + 1) >> 1; // ceil(N / 2)
             uint8_t *mask = malloc(n_mask * sizeof(uint8_t));
@@ -258,7 +258,7 @@ int main(int argc, char** argv)
             double start2 = get_time_ms();
             MP *A_mixed = FP_mixed(A_prec, nnz, mask, n_mask, &count_d, &count_u32, &count_u16, &count_u8);
             double end2 = get_time_ms();
-            printf("converted FP_INT_PREC to mixed precision storage\n");
+            //printf("converted FP_INT_PREC to mixed precision storage\n");
 
             if (!A_mixed) 
             {
@@ -309,7 +309,7 @@ int main(int argc, char** argv)
 
             fclose(fp_matrix);
             double end3 = get_time_ms();
-            printf("wrote matrix A to file\n");
+            //printf("wrote matrix A to file\n");
             
 
             // read matrix A from file
@@ -462,7 +462,7 @@ int main(int argc, char** argv)
 
             fclose(fp_matrix_read);
             double end4 = get_time_ms();
-            printf("read matrix A from file\n");
+            //printf("read matrix A from file\n");
 
             // Convert mixed precision storage to C_R
             FP_INT *A_tilde = NULL;
@@ -476,13 +476,13 @@ int main(int argc, char** argv)
             }
             double end5 = get_time_ms();
 
-            printf("converted mixed precision storage to C_R\n");
+            //printf("converted mixed precision storage to C_R\n");
 
             // GS
             double start_GS = get_time_ms();
             interval_GS_CSR(A, idx2, col_id2, b, x2, n_read);
             double end_GS = get_time_ms();
-            printf("GS done\n");
+            //printf("GS done\n");
 
             // Write accuracy to file
             FILE *fp_res = fopen(res, "a");
@@ -538,9 +538,9 @@ int main(int argc, char** argv)
 
         case 1: // float/double storage
         {
-            sprintf(time, "GS_fd_time_%d.txt", n);
-            sprintf(matrix, "GS_fd_matrix_%d.txt", n);
-            sprintf(res, "GS_fd_res_%d.txt", n);
+            sprintf(time, "GS_csr_fd_time_%d.txt", n);
+            sprintf(matrix, "GS_csr_fd_matrix_%d.txt", n);
+            sprintf(res, "GS_csr_fd_res_%d.txt", n);
     
 
             C_R *A = NULL;
@@ -555,7 +555,7 @@ int main(int argc, char** argv)
             
             generate_rhs_ieee(b, n);
             generate_matrix_CSR_ieee(&A, idx1, &col_id1, n);
-            printf("generated A b\n");
+            //printf("generated A b\n");
 
             int nnz = idx1[n] - idx1[0];
             int n_mask = (nnz + 7) >> 3; // ceil(nnz / 8)
@@ -570,11 +570,11 @@ int main(int argc, char** argv)
                 x2[i].center = 0.7;
                 x2[i].radius = 0.7;
             }
-            printf("initialized x\n");
+            //printf("initialized x\n");
 
             // GS ref
             interval_GS_CSR(A, idx1, col_id1, b, x1, n);
-            printf("GS ref done\n");
+            //printf("GS ref done\n");
 
             FP_INT_PREC *A_prec = malloc(nnz * sizeof(FP_INT_PREC));
 
@@ -586,7 +586,7 @@ int main(int argc, char** argv)
             }
             double end1 = get_time_ms();
 
-            printf("converted C_R to FP_INT_PREC\n");
+            //printf("converted C_R to FP_INT_PREC\n");
 
             // Convert FP_INT_PREC to float/double storage
             D_F * A_df = NULL;
@@ -594,7 +594,7 @@ int main(int argc, char** argv)
             double start2 = get_time_ms();
             A_df = FP_fd(A_prec, nnz, mask, n_mask, &count_f);
             double end2 = get_time_ms();
-            printf("converted FP_INT_PREC to float/double storage\n");
+            //printf("converted FP_INT_PREC to float/double storage\n");
 
             // Write matrix A to file
             int count_d = nnz - count_f;
@@ -628,7 +628,7 @@ int main(int argc, char** argv)
             
             fclose(fp_matrix);
             double end3 = get_time_ms();
-            printf("wrote matrix A to file\n");
+            //printf("wrote matrix A to file\n");
 
             // read matrix A from file
             int n_read, n_mask_read;
@@ -749,7 +749,7 @@ int main(int argc, char** argv)
             
             fclose(fp_matrix_read);
             double end4 = get_time_ms();
-            printf("read matrix A from file\n");
+            //printf("read matrix A from file\n");
             
             // Convert mixed precision storage to C_R
             FP_INT *A_tilde = NULL;
@@ -762,13 +762,13 @@ int main(int argc, char** argv)
             }
             double end5 = get_time_ms();
 
-            printf("converted float/double storage to C_R\n");
+            //printf("converted float/double storage to C_R\n");
 
             // GS
             double start_GS = get_time_ms();
             interval_GS_CSR(A, idx2, col_id2, b, x2, n_read);
             double end_GS = get_time_ms();
-            printf("GS done\n");
+            //printf("GS done\n");
 
             // Write results to file
             FILE *fp_res = fopen(res, "a");
@@ -821,9 +821,9 @@ int main(int argc, char** argv)
 
         case 2: // uint32_t storage
         {
-            sprintf(time, "GS_u32_time_%d.txt", n);
-            sprintf(matrix, "GS_u32_matrix_%d.txt", n);
-            sprintf(res, "GS_u32_res_%d.txt", n);
+            sprintf(time, "GS_csr_u32_time_%d.txt", n);
+            sprintf(matrix, "GS_csr_u32_matrix_%d.txt", n);
+            sprintf(res, "GS_csr_u32_res_%d.txt", n);
 
             C_R *A = NULL;
             int *idx1 = malloc((n + 1) * sizeof(int));
@@ -837,7 +837,7 @@ int main(int argc, char** argv)
 
             generate_rhs_ieee(b, n);
             generate_matrix_CSR_ieee(&A, idx1, &col_id1, n);
-            printf("generated A b\n");
+            //printf("generated A b\n");
 
             int nnz = idx1[n] - idx1[0];
             int n_mask = (nnz + 7) >> 3;
@@ -855,7 +855,7 @@ int main(int argc, char** argv)
 
             // GS ref
             interval_GS_CSR(A, idx1, col_id1, b, x1, n);
-            printf("GS ref done\n");
+            //printf("GS ref done\n");
 
             FP_INT_PREC *A_prec = malloc(nnz * sizeof(FP_INT_PREC));
 
@@ -867,7 +867,7 @@ int main(int argc, char** argv)
             }
             double end1 = get_time_ms();
 
-            printf("converted C_R to FP_INT_PREC\n");
+            //printf("converted C_R to FP_INT_PREC\n");
 
             uint32_t *A32 = NULL;
             int count32 = 0;
@@ -877,8 +877,8 @@ int main(int argc, char** argv)
             A32 = FP_u32(A_prec, nnz, mask, n_mask, &count32);
             double end2 = get_time_ms();
 
-            printf("converted FP_INT_PREC to uint32_t storage\n");
-            printf("count32 = %d\n", count32);
+            //printf("converted FP_INT_PREC to uint32_t storage\n");
+            //printf("count32 = %d\n", count32);
 
             // Write matrix A to file      
             FILE *fp_matrix = fopen(matrix, "w");
@@ -905,7 +905,7 @@ int main(int argc, char** argv)
             double end3 = get_time_ms();
 
             fclose(fp_matrix);
-            printf("wrote matrix A to file\n");
+            //printf("wrote matrix A to file\n");
     
             // read matrix A from file
             int n_read, n_mask_read;
@@ -1015,7 +1015,7 @@ int main(int argc, char** argv)
             
             fclose(fp_matrix_read);
             double end4 = get_time_ms();
-            printf("read matrix A from file\n");
+            //printf("read matrix A from file\n");
 
             // Convert uint32_t storage to C_R
             FP_INT *A_tilde = NULL;
@@ -1029,14 +1029,14 @@ int main(int argc, char** argv)
             }
             double end5 = get_time_ms();
 
-            printf("converted uint32_t storage to C_R\n");
+            //printf("converted uint32_t storage to C_R\n");
 
 
             // GS
             double start_GS = get_time_ms();
             interval_GS_CSR(A, idx2, col_id2, b, x2, n_read);
             double end_GS = get_time_ms();
-            printf("GS done\n");
+            //printf("GS done\n");
 
             // Write accuracy to file
             FILE *fp_res = fopen(res, "a");
@@ -1084,9 +1084,9 @@ int main(int argc, char** argv)
 
         default: // mpfi multiprecision
         {
-            sprintf(time, "GS_mpfi_time_%d_%d.txt", n, precision);
-            sprintf(matrix, "GS_mpfi_matrix_%d_%d.txt", n, precision);
-            sprintf(res, "GS_mpfi_res_%d_%d.txt", n, precision);
+            sprintf(time, "GS_csr_mpfi_time_%d_%d.txt", n, precision);
+            sprintf(matrix, "GS_csr_mpfi_matrix_%d_%d.txt", n, precision);
+            sprintf(res, "GS_csr_mpfi_res_%d_%d.txt", n, precision);
 
 
             MPFR_C_R *A = NULL;
@@ -1098,7 +1098,7 @@ int main(int argc, char** argv)
 
             generate_rhs_mpfr(b, n, precision);
             generate_matrix_CSR_mpfr(&A, idx1, &col_id1, n, precision);
-            printf("generated A b\n");
+            //printf("generated A b\n");
 
             int nnz = idx1[n] - idx1[0];
 
@@ -1141,7 +1141,7 @@ int main(int argc, char** argv)
 
             // GS ref
             interval_GS_CSR_mpfi(A_mpfi, idx1, col_id1, b_mpfi, x_mpfi, n);
-            printf("GS ref done\n");
+            //printf("GS ref done\n");
 
             // conversion
             double start1 = get_time_ms();
@@ -1152,7 +1152,7 @@ int main(int argc, char** argv)
                 mpfr_set(A_tilde[i], A[i].center, MPFR_RNDZ);
             }
             double end1 = get_time_ms();
-            printf("converted C_R to mpfr_t\n");
+            //printf("converted C_R to mpfr_t\n");
 
 
             // write matrix A to file
@@ -1178,7 +1178,7 @@ int main(int argc, char** argv)
             }
             fclose(fp_matrix);
             double end2 = get_time_ms();
-            printf("wrote matrix A to file\n");
+            //printf("wrote matrix A to file\n");
 
 
             // read matrix A from file
@@ -1244,7 +1244,7 @@ int main(int argc, char** argv)
             }
             fclose(fp_matrix_read);
             double end3 = get_time_ms();
-            printf("read matrix A from file\n");
+            //printf("read matrix A from file\n");
 
             // read radius from A_tilde, convert to mpfi_t
             double start4 = get_time_ms();
@@ -1258,14 +1258,14 @@ int main(int argc, char** argv)
                 mpfr_clear(tmp.radius);
             }
             double end4 = get_time_ms();    
-            printf("read radius from A_tilde\n");    
+            //printf("read radius from A_tilde\n");    
 
 
             // Gauss-Seidel
             double start_GS = get_time_ms();
             interval_GS_CSR_mpfi(A_mpfi2, idx2, col_id2, b_mpfi, x_mpfi2, n);
             double end_GS = get_time_ms();
-            printf("GS done\n");
+            //printf("GS done\n");
 
             // accuracy check
             for (int i = 0; i < n; i ++)

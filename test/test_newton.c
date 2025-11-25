@@ -5,7 +5,7 @@
 #include <math.h>
 #include <fenv.h>
 
-// c, 2r
+// c, 3r
 
 int main(int argc, char **argv)
 {
@@ -20,10 +20,10 @@ int main(int argc, char **argv)
     FP_INT *res = (FP_INT *)malloc(sizeof(FP_INT) * N);
     C_R *ref = (C_R *)malloc(sizeof(C_R) * N);
 
-    char file1[64];
+    //char file1[64];
     char file2[64];
 
-    sprintf(file1, "newton_res_%d.txt", N);
+    //sprintf(file1, "newton_res_%d.txt", N);
     sprintf(file2, "newton_time_%d.txt", N);
 
     srand(get_time_ms());
@@ -37,10 +37,12 @@ int main(int argc, char **argv)
         fesetround(FE_TONEAREST);
     }
 
+    /*
     for (int i = 0; i < N; i ++)
     {
         ref[i] = newton_pr(test[i]);
     }
+    */
 
     double start1 = get_time_ms();
     for (int i = 0; i < N; i ++)
@@ -56,6 +58,7 @@ int main(int argc, char **argv)
     }
     double end2 = get_time_ms();
     
+    /*
     FILE *fp1 = fopen(file1, "a");
     fprintf(fp1, "sqrt(2) =\t");
     fprint_binary(fp1, sqrt(2));
@@ -65,6 +68,7 @@ int main(int argc, char **argv)
         fprint_binary(fp1, res[i]);
     }
     fclose(fp1);
+    */
 
     FILE *fp2 = fopen(file2, "a");
     fprintf(fp2, "%.10e\t%.10e\tms\n", end1 - start1, end2 - start2);
