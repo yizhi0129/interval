@@ -20,24 +20,13 @@ void int_mat_mult(double *mA, double *rA, double *mB, double *rB, double *mC, do
     cblas_dcopy(size, mA, 1, abs_mA, 1);
     cblas_dcopy(size, mB, 1, abs_mB, 1);
 
-    int signA = get_sign_bit(mA[0]);
-    int signB = get_sign_bit(mB[0]);
-    if (signA)
+
+    for (int i = 0; i < size; i ++)
     {
-        for (int i = 0; i < size; i ++)
-        {
-            abs_mA[i] = - mA[i];
-        }
+        abs_mA[i] = fabs(mA[i]);
+        abs_mB[i] = fabs(mB[i]);
     }
-    // abs_mA = |mA|
-    if (signB)
-    {
-        for (int i = 0; i < size; i ++)
-        {
-            abs_mB[i] = - mB[i];
-        }
-    }
-    // abs_mB = |mB|
+    // abs_mA = |mA|, abs_mB = |mB|
     
     cblas_dcopy(size, rB, 1, rBb, 1);
 
@@ -45,8 +34,8 @@ void int_mat_mult(double *mA, double *rA, double *mB, double *rB, double *mC, do
     double a = (n + 2) * EPS;
     cblas_daxpy(size, a, abs_mB, 1, rBb, 1);   // rBb = rnd_up(rB + (n + 2) * EPS * |mB|)  
     cblas_daxpy(size, 1, abs_mB, 1, rB, 1);   // rB = rnd_up(rB + |mB|)
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, abs_mA, n, rBb, n, 0, rC, n); // rC = rnd_n(|mA| * rBb)
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, rA, n, rB, n, 1, rC, n); // rC = rnd_n(rA * rB + rC)
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, abs_mA, n, rBb, n, 0, rC, n); // rC = rnd_up(|mA| * rBb)
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, n, n, n, 1, rA, n, rB, n, 1, rC, n); // rC = rnd_up(rA * rB + rC)
     for (int i = 0; i < size; i ++)
     {
         rC[i] += REALMIN; 
@@ -59,39 +48,30 @@ void int_mat_mult(double *mA, double *rA, double *mB, double *rB, double *mC, do
     free(rBb);
 }
 
-void mat_is_cr(double *iA, double *sA, double *iB, double *sB, double *mA, double *rA, double *mB, double *rB, int n)
+void mat_is_cr(double *iX, double *sX, double *mX, double *rX, int n)
 {
     int size = n * n;
     fesetround(FE_UPWARD);
-    cblas_dcopy(size, iA, 1, mA, 1);
-    cblas_dcopy(size, iB, 1, mB, 1);
-    cblas_daxpy(size, 1.0, sA, 1, mA, 1);
-    cblas_daxpy(size, 1.0, sB, 1, mB, 1);
+    cblas_dcopy(size, iX, 1, mX, 1);
+    cblas_daxpy(size, 1.0, sX, 1, mX, 1);
     for (int i = 0; i < size; i ++)
     {
-        mA[i] *= 0.5;
-        mB[i] *= 0.5;
+        mX[i] *= 0.5;
     }
-    cblas_dcopy(size, mA, 1, rA, 1);
-    cblas_dcopy(size, mB, 1, rB, 1);
-    cblas_daxpy(size, -1.0, iA, 1, rA, 1);
-    cblas_daxpy(size, -1.0, iB, 1, rB, 1);
+    cblas_dcopy(size, mX, 1, rX, 1);
+    cblas_daxpy(size, -1.0, iX, 1, rX, 1);
     fesetround(FE_TONEAREST);
 }
 
-void mat_cr_is(double *mA, double *rA, double *mB, double *rB, double *iA, double *sA, double *iB, double *sB, int n)
+void mat_cr_is(double *mX, double *rX, double *iX, double *sX, int n)
 {
     int size = n * n;
-    cblas_dcopy(size, mA, 1, iA, 1);
-    cblas_dcopy(size, mB, 1, iB, 1);
-    cblas_dcopy(size, mA, 1, sA, 1);
-    cblas_dcopy(size, mB, 1, sB, 1);
+    cblas_dcopy(size, mX, 1, iX, 1);
+    cblas_dcopy(size, mX, 1, sX, 1);
     fesetround(FE_UPWARD);
-    cblas_daxpy(size, 1.0, rA, 1, sA, 1); // sA = rnd_up(mA + rA)
-    cblas_daxpy(size, 1.0, rB, 1, sB, 1); // sB = rnd_up(mB + rB)
+    cblas_daxpy(size, 1.0, rX, 1, sX, 1); // sX = rnd_up(mX + rX)
     fesetround(FE_DOWNWARD);
-    cblas_daxpy(size, -1.0, rA, 1, iA, 1); // iA = rnd_down(mA - rA)
-    cblas_daxpy(size, -1.0, rB, 1, iB, 1); // iB = rnd_down(mB - rB)
+    cblas_daxpy(size, -1.0, rX, 1, iX, 1); // iX = rnd_down(mX - rX)
     fesetround(FE_TONEAREST);
 }
 

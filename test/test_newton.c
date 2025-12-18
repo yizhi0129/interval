@@ -5,7 +5,7 @@
 #include <math.h>
 #include <fenv.h>
 
-// c, 3r
+// r = 3 * uls(c)
 
 int main(int argc, char **argv)
 {
@@ -71,7 +71,10 @@ int main(int argc, char **argv)
     */
 
     FILE *fp2 = fopen(file2, "a");
-    fprintf(fp2, "%.10e\t%.10e\tms\n", end1 - start1, end2 - start2);
+    double t1 = end1 - start1;
+    double t2 = end2 - start2;
+    double percent = t2 / t1 * 100;
+    fprintf(fp2, "%.17e\t%.17e\t%.17e\n", t1, t2, percent);
     fclose(fp2);
 
     free(test);

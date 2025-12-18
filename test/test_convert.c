@@ -240,7 +240,7 @@ int main(int argc, char **argv)
         perror("Failed to open convert_time.txt");
         return 1;
     }
-    fprintf(fp, "%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t(ms)\n", 
+    fprintf(fp, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t(ms)\n", 
         end1 - start1, end2 - start2, end3 - start3, end4 - start4, (end0 - start0) / 16.0, 
         end111 - start111, end222 - start222, end333 - start333, end444 - start444, end5 - start5, end555 - start555, 
         end6 - start6, end666 - start666, end1b - start1b, end1_adj - start1_adj, 
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
     FILE *fpdil = fopen("dilat.txt", "a");
     for(int i = 0; i < 2 * N; i += 1000)
     {
-        fprintf(fp2, "test_int[%d] = [%.10e,\t%.10e]\n", i, test_int[i].center - test_int[i].radius, test_int[i].center + test_int[i].radius);
+        fprintf(fp2, "test_int[%d] = [%.17e,\t%.17e]\n", i, test_int[i].center - test_int[i].radius, test_int[i].center + test_int[i].radius);
         fprint_binary(fp2, test_int[i].center);
         fprint_binary(fp2, test_int[i].radius);
         fprintf(fp2, "CR1:\n");
@@ -328,7 +328,7 @@ int main(int argc, char **argv)
         e3_min = fmin(e3_min, e3_rate);
     }
 
-    fprintf(fpdil, "%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\n", 
+    fprintf(fpdil, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", 
         e1_max, e1_min, r1_max, r1_min, e2_max, e2_min, r2_max, r2_min, e3_max, e3_min, r3_max, r3_min);
     fclose(fpdil);
 
@@ -337,7 +337,7 @@ int main(int argc, char **argv)
         if (CR_c1[i] - CR_cr1[i].radius > test_int[i].center - test_int[i].radius || 
             CR_c1[i] + CR_cr1[i].radius < test_int[i].center + test_int[i].radius)
         {
-            fprintf(fp2, "CR_c1 = [%.10e,\t%.10e]\t", CR_c1[i] - CR_cr1[i].radius, CR_c1[i] + CR_cr1[i].radius);
+            fprintf(fp2, "CR_c1 = [%.17e,\t%.17e]\t", CR_c1[i] - CR_cr1[i].radius, CR_c1[i] + CR_cr1[i].radius);
             fprintf(fp2, "Error\n");
             fprint_binary(fp2, test_int[i].center);
             fprint_binary(fp2, test_int[i].radius);
@@ -349,7 +349,7 @@ int main(int argc, char **argv)
         if (CR_c2[i] - CR_cr2[i].radius > test_int[i].center - test_int[i].radius || 
             CR_c2[i] + CR_cr2[i].radius < test_int[i].center + test_int[i].radius)
         {
-            fprintf(fp2, "CR_c2 = [%.10e,\t%.10e]\t", CR_c2[i] - CR_cr2[i].radius, CR_c2[i] + CR_cr2[i].radius);
+            fprintf(fp2, "CR_c2 = [%.17e,\t%.17e]\t", CR_c2[i] - CR_cr2[i].radius, CR_c2[i] + CR_cr2[i].radius);
             fprintf(fp2, "Error\n");
             fprint_binary(fp2, test_int[i].center);
             fprint_binary(fp2, test_int[i].radius);
@@ -361,7 +361,7 @@ int main(int argc, char **argv)
         if (CR_c3[i] - CR_cr3[i].radius > test_int[i].center - test_int[i].radius || 
             CR_c3[i] + CR_cr3[i].radius < test_int[i].center + test_int[i].radius)
         {
-            fprintf(fp2, "CR_c3 = [%.10e,\t%.10e]\t", CR_c3[i] - CR_cr3[i].radius, CR_c3[i] + CR_cr3[i].radius);
+            fprintf(fp2, "CR_c3 = [%.17e,\t%.17e]\t", CR_c3[i] - CR_cr3[i].radius, CR_c3[i] + CR_cr3[i].radius);
             fprintf(fp2, "Error\n");
             fprint_binary(fp2, test_int[i].center);
             fprint_binary(fp2, test_int[i].radius);
@@ -373,7 +373,7 @@ int main(int argc, char **argv)
         if (CR_c4[i] - CR_cr4[i].radius > test_int[i].center - test_int[i].radius || 
             CR_c4[i] + CR_cr4[i].radius < test_int[i].center + test_int[i].radius)
         {
-            fprintf(fp2, "CR_c4 = [%.10e,\t%.10e]\t", CR_c4[i] - CR_cr4[i].radius, CR_c4[i] + CR_cr4[i].radius);
+            fprintf(fp2, "CR_c4 = [%.17e,\t%.17e]\t", CR_c4[i] - CR_cr4[i].radius, CR_c4[i] + CR_cr4[i].radius);
             fprintf(fp2, "Error\n");
             fprint_binary(fp2, test_int[i].center);
             fprint_binary(fp2, test_int[i].radius);
@@ -385,7 +385,7 @@ int main(int argc, char **argv)
         if (CR_c5[i] - CR_cr5[i].radius > test_int[i].center - test_int[i].radius || 
             CR_c5[i] + CR_cr5[i].radius < test_int[i].center + test_int[i].radius)
         {
-            fprintf(fp2, "CR_c5 = [%.10e,\t%.10e]\t", CR_c5[i] - CR_cr5[i].radius, CR_c5[i] + CR_cr5[i].radius);
+            fprintf(fp2, "CR_c5 = [%.17e,\t%.17e]\t", CR_c5[i] - CR_cr5[i].radius, CR_c5[i] + CR_cr5[i].radius);
             fprintf(fp2, "Error\n");
             fprint_binary(fp2, test_int[i].center);
             fprint_binary(fp2, test_int[i].radius);
@@ -397,7 +397,7 @@ int main(int argc, char **argv)
         if (CR_c6[i] - CR_cr6[i].radius > test_int[i].center - test_int[i].radius || 
             CR_c6[i] + CR_cr6[i].radius < test_int[i].center + test_int[i].radius)
         {
-            fprintf(fp2, "CR_c6 = [%.10e,\t%.10e]\t", CR_c6[i] - CR_cr6[i].radius, CR_c6[i] + CR_cr6[i].radius);
+            fprintf(fp2, "CR_c6 = [%.17e,\t%.17e]\t", CR_c6[i] - CR_cr6[i].radius, CR_c6[i] + CR_cr6[i].radius);
             fprintf(fp2, "Error\n");
             fprint_binary(fp2, test_int[i].center);
             fprint_binary(fp2, test_int[i].radius);
@@ -409,7 +409,7 @@ int main(int argc, char **argv)
         if (CR_c1b[i] - CR_cr1b[i].radius > test_int[i].center - test_int[i].radius || 
             CR_c1b[i] + CR_cr1b[i].radius < test_int[i].center + test_int[i].radius)
         {
-            fprintf(fp2, "CR_c1b = [%.10e,\t%.10e]\t", CR_c1b[i] - CR_cr1b[i].radius, CR_c1b[i] + CR_cr1b[i].radius);
+            fprintf(fp2, "CR_c1b = [%.17e,\t%.17e]\t", CR_c1b[i] - CR_cr1b[i].radius, CR_c1b[i] + CR_cr1b[i].radius);
             fprintf(fp2, "Error\n");
             fprint_binary(fp2, test_int[i].center);
             fprint_binary(fp2, test_int[i].radius);
@@ -421,7 +421,7 @@ int main(int argc, char **argv)
         if (CR_c1_adj[i] - 2 * CR_cr1_adj[i].radius > test_int[i].center - test_int[i].radius || 
             CR_c1_adj[i] + 2 * CR_cr1_adj[i].radius < test_int[i].center + test_int[i].radius)
         {
-            fprintf(fp2, "CR_c1_adj = [%.10e,\t%.10e]\t", CR_c1_adj[i] - CR_cr1_adj[i].radius, CR_c1_adj[i] + CR_cr1_adj[i].radius);
+            fprintf(fp2, "CR_c1_adj = [%.17e,\t%.17e]\t", CR_c1_adj[i] - CR_cr1_adj[i].radius, CR_c1_adj[i] + CR_cr1_adj[i].radius);
             fprintf(fp2, "Error\n");
             fprint_binary(fp2, test_int[i].center);
             fprint_binary(fp2, test_int[i].radius);
@@ -433,7 +433,7 @@ int main(int argc, char **argv)
         if (CR_c1_adjbis[i] - 3 * CR_cr1_adjbis[i].radius > test_int[i].center - test_int[i].radius || 
             CR_c1_adjbis[i] + 3 * CR_cr1_adjbis[i].radius < test_int[i].center + test_int[i].radius)
         {
-            fprintf(fp2, "CR_c1_adjbis = [%.10e,\t%.10e]\t", CR_c1_adjbis[i] - CR_cr1_adjbis[i].radius, CR_c1_adjbis[i] + CR_cr1_adjbis[i].radius);
+            fprintf(fp2, "CR_c1_adjbis = [%.17e,\t%.17e]\t", CR_c1_adjbis[i] - CR_cr1_adjbis[i].radius, CR_c1_adjbis[i] + CR_cr1_adjbis[i].radius);
             fprintf(fp2, "Error\n");
             fprint_binary(fp2, test_int[i].center);
             fprint_binary(fp2, test_int[i].radius);
@@ -445,7 +445,7 @@ int main(int argc, char **argv)
         if (CR_c1_adjter[i] - 4 * CR_cr1_adjter[i].radius > test_int[i].center - test_int[i].radius || 
             CR_c1_adjter[i] + 4 * CR_cr1_adjter[i].radius < test_int[i].center + test_int[i].radius)
         {
-            fprintf(fp2, "CR_c1_adjter = [%.10e,\t%.10e]\t", CR_c1_adjter[i] - CR_cr1_adjter[i].radius, CR_c1_adjter[i] + CR_cr1_adjter[i].radius);
+            fprintf(fp2, "CR_c1_adjter = [%.17e,\t%.17e]\t", CR_c1_adjter[i] - CR_cr1_adjter[i].radius, CR_c1_adjter[i] + CR_cr1_adjter[i].radius);
             fprintf(fp2, "Error\n");
             fprint_binary(fp2, test_int[i].center);
             fprint_binary(fp2, test_int[i].radius);
@@ -465,7 +465,7 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < 2 * N; i += 1000)
     {
-        fprintf(fp3, "test_int2[%d] = [%.10e,\t%.10e]\n", i, test_int2[i].inf, test_int2[i].sup);
+        fprintf(fp3, "test_int2[%d] = [%.17e,\t%.17e]\n", i, test_int2[i].inf, test_int2[i].sup);
         fprint_binary(fp3, test_int2[i].inf);
         fprint_binary(fp3, test_int2[i].sup);
         fprintf(fp3, "IS1:\n");
@@ -499,7 +499,7 @@ int main(int argc, char **argv)
         if (IS_c1[i] - IS_cr1[i].radius > test_int2[i].inf || 
             IS_c1[i] + IS_cr1[i].radius < test_int2[i].sup)
         {
-            fprintf(fp3, "IS_c1 = [%.10e,\t%.10e]\t", IS_c1[i] - IS_cr1[i].radius, IS_c1[i] + IS_cr1[i].radius);
+            fprintf(fp3, "IS_c1 = [%.17e,\t%.17e]\t", IS_c1[i] - IS_cr1[i].radius, IS_c1[i] + IS_cr1[i].radius);
             fprintf(fp3, "Error\n");
             fprint_binary(fp3, IS_c1[i]);
             fprint_binary(fp3, IS_cr1[i].center);
@@ -509,7 +509,7 @@ int main(int argc, char **argv)
         if (IS_c2[i] - IS_cr2[i].radius > test_int2[i].inf ||
             IS_c2[i] + IS_cr2[i].radius < test_int2[i].sup)
         {
-            fprintf(fp3, "IS_c2 = [%.10e,\t%.10e]\t", IS_c2[i] - IS_cr2[i].radius, IS_c2[i] + IS_cr2[i].radius);
+            fprintf(fp3, "IS_c2 = [%.17e,\t%.17e]\t", IS_c2[i] - IS_cr2[i].radius, IS_c2[i] + IS_cr2[i].radius);
             fprintf(fp3, "Error\n");
             fprint_binary(fp3, IS_c2[i]);
             fprint_binary(fp3, IS_cr2[i].center);
@@ -519,7 +519,7 @@ int main(int argc, char **argv)
         if (IS_c3[i] - IS_cr3[i].radius > test_int2[i].inf ||
             IS_c3[i] + IS_cr3[i].radius < test_int2[i].sup)
         {
-            fprintf(fp3, "IS_c3 = [%.10e,\t%.10e]\t", IS_c3[i] - IS_cr3[i].radius, IS_c3[i] + IS_cr3[i].radius);
+            fprintf(fp3, "IS_c3 = [%.17e,\t%.17e]\t", IS_c3[i] - IS_cr3[i].radius, IS_c3[i] + IS_cr3[i].radius);
             fprintf(fp3, "Error\n");
             fprint_binary(fp3, IS_c3[i]);
             fprint_binary(fp3, IS_cr3[i].center);
@@ -529,7 +529,7 @@ int main(int argc, char **argv)
         if (IS_c4[i] - IS_cr4[i].radius > test_int2[i].inf || 
             IS_c4[i] + IS_cr4[i].radius < test_int2[i].sup)
         {
-            fprintf(fp3, "IS_c4 = [%.10e,\t%.10e]\t", IS_c4[i] - IS_cr4[i].radius, IS_c4[i] + IS_cr4[i].radius);
+            fprintf(fp3, "IS_c4 = [%.17e,\t%.17e]\t", IS_c4[i] - IS_cr4[i].radius, IS_c4[i] + IS_cr4[i].radius);
             fprintf(fp3, "Error\n");
             fprint_binary(fp3, IS_c4[i]);
             fprint_binary(fp3, IS_cr4[i].center);
@@ -539,7 +539,7 @@ int main(int argc, char **argv)
         if (IS_c5[i] - IS_cr5[i].radius > test_int2[i].inf || 
             IS_c5[i] + IS_cr5[i].radius < test_int2[i].sup)
         {
-            fprintf(fp3, "IS_c5 = [%.10e,\t%.10e]\t", IS_c5[i] - IS_cr5[i].radius, IS_c5[i] + IS_cr5[i].radius);
+            fprintf(fp3, "IS_c5 = [%.17e,\t%.17e]\t", IS_c5[i] - IS_cr5[i].radius, IS_c5[i] + IS_cr5[i].radius);
             fprintf(fp3, "Error\n");
             fprint_binary(fp3, IS_c5[i]);
             fprint_binary(fp3, IS_cr5[i].center);
@@ -549,7 +549,7 @@ int main(int argc, char **argv)
         if (IS_c6[i] - IS_cr6[i].radius > test_int2[i].inf || 
             IS_c6[i] + IS_cr6[i].radius < test_int2[i].sup)
         {
-            fprintf(fp3, "IS_c6 = [%.10e,\t%.10e]\t", IS_c6[i] - IS_cr6[i].radius, IS_c6[i] + IS_cr6[i].radius);
+            fprintf(fp3, "IS_c6 = [%.17e,\t%.17e]\t", IS_c6[i] - IS_cr6[i].radius, IS_c6[i] + IS_cr6[i].radius);
             fprintf(fp3, "Error\n");
             fprint_binary(fp3, IS_c6[i]);
             fprint_binary(fp3, IS_cr6[i].center);

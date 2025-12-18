@@ -5,8 +5,8 @@
 
 void int_mat_mult(double *mA, double *rA, double *mB, double *rB, double *mC, double *rC, int n);
 
-void mat_is_cr(double *iA, double *sA, double *iB, double *sB, double *mA, double *rA, double *mB, double *rB, int n);
-void mat_cr_is(double *mA, double *rA, double *mB, double *rB, double *iA, double *sA, double *iB, double *sB, int n);
+void mat_is_cr(double *iX, double *sX, double *mX, double *rX, int n);
+void mat_cr_is(double *mX, double *rX, double *iX, double *sX, int n);
 
 void ref1_pp(double *iA, double *sA, double *iB, double *sB, double *iC, double *sC, int n);
 void ref2_mm(double *iA, double *sA, double *iB, double *sB, double *iC, double *sC, int n);

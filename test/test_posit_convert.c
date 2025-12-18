@@ -71,9 +71,9 @@ int main(int argc, char **argv)
     posit32_t * ipb_8_convert = malloc(total * sizeof(posit32_t));
     posit32_t * ipb_16_convert = malloc(total * sizeof(posit32_t));
 
-    double ipb_8_avg = 0.0, ipb_8_c_avg = 0.0, ipb_16_avg = 0.0, ipb_16_c_avg = 0.0;
-    double ipb_8_max = 0.0, ipb_8_c_max = 0.0, ipb_16_max = 0.0, ipb_16_c_max = 0.0;
-    double ipb_8_min = INFINITY, ipb_8_c_min = INFINITY, ipb_16_min = INFINITY, ipb_16_c_min = INFINITY;
+    double ipb_8_avg = 0.0, ipb_8_c_avg = 0.0, ipb_16_avg = 0.0, ipb_16_c_avg = 0.0, avg_rate8 = 0.0, avg_rate16 = 0.0;
+    double ipb_8_max = 0.0, ipb_8_c_max = 0.0, ipb_16_max = 0.0, ipb_16_c_max = 0.0, max_rate8 = 0.0, max_rate16 = 0.0;
+    double ipb_8_min = INFINITY, ipb_8_c_min = INFINITY, ipb_16_min = INFINITY, ipb_16_c_min = INFINITY, min_rate8 = INFINITY, min_rate16 = INFINITY;
 
     posit32_t tmp8 = convertDoubleToP32(CONST_IPB_8);
     posit32_t tmp16 = convertDoubleToP32(CONST_IPB_16);
@@ -136,27 +136,36 @@ int main(int argc, char **argv)
 
         double ipb8_d = convertP32ToDouble(ipb_8[i]);
         double ipb8_c_d = convertP32ToDouble(ipb_8_convert[i]);
+        double temp8 = ipb8_c_d / ipb8_d;
         ipb_8_avg += ipb8_d;
         ipb_8_c_avg += ipb8_c_d;
+        avg_rate8 += temp8;
         ipb_8_max = fmax(ipb_8_max, ipb8_d);
         ipb_8_c_max = fmax(ipb_8_c_max, ipb8_c_d);
+        max_rate8 = fmax(max_rate8, temp8);
         ipb_8_min = fmin(ipb_8_min, ipb8_d);
         ipb_8_c_min = fmin(ipb_8_c_min, ipb8_c_d);
+        min_rate8 = fmin(min_rate8, temp8);
 
         double ipb16_d = convertP32ToDouble(ipb_16[i]);
         double ipb16_c_d = convertP32ToDouble(ipb_16_convert[i]);
+        double temp16 = ipb16_c_d / ipb16_d;
         ipb_16_avg += ipb16_d;
         ipb_16_c_avg += ipb16_c_d;
+        avg_rate16 += temp16;
         ipb_16_max = fmax(ipb_16_max, ipb16_d);
         ipb_16_c_max = fmax(ipb_16_c_max, ipb16_c_d);
+        max_rate16 = fmax(max_rate16, temp16);
         ipb_16_min = fmin(ipb_16_min, ipb16_d);
         ipb_16_c_min = fmin(ipb_16_c_min, ipb16_c_d);
+        min_rate16 = fmin(min_rate16, temp16);
     }
     ipb_8_avg /= total;
     ipb_8_c_avg /= total;
+    avg_rate8 /= total;
     ipb_16_avg /= total;
     ipb_16_c_avg /= total;
-
+    avg_rate16 /= total;
 
     /*
     for (int j = 0; j < total; j += 100)
@@ -172,7 +181,7 @@ int main(int argc, char **argv)
         printf("p8_r = ");
         p8_print_binary(p8_r[j]);
         double ipb8_d = convertP32ToDouble(ipb_8[j]);
-        printf("ipb8: %.10e\n", ipb8_d);
+        printf("ipb8: %.17e\n", ipb8_d);
 
         printf("convert:\nc16 = ");
         p16_print_binary(p16_interval[j].posit16);
@@ -180,7 +189,7 @@ int main(int argc, char **argv)
         print_binary(c16);
         printf("precision16: %d\n", p16_interval[j].prec);
         double ipb8_c_d = convertP32ToDouble(ipb_8_convert[j]);
-        printf("ipb8 convert: %.10e\n", ipb8_c_d);
+        printf("ipb8 convert: %.17e\n", ipb8_c_d);
 
         printf("read radius:\nr16 = ");
         p16_print_binary(p16_r_tilde[j]);
@@ -197,7 +206,7 @@ int main(int argc, char **argv)
         printf("p16_r = ");
         p16_print_binary(p16_r[j]);
         double ipb16_d = convertP32ToDouble(ipb_16[j]);
-        printf("ipb16: %.10e\n", ipb16_d);
+        printf("ipb16: %.17e\n", ipb16_d);
         
         printf("convert:\nc32 = ");
         p32_print_binary(p32_interval[j].posit32);
@@ -205,7 +214,7 @@ int main(int argc, char **argv)
         print_binary(c32);
         printf("precision32: %d\n", p32_interval[j].prec);
         double ipb16_c_d = convertP32ToDouble(ipb_16_convert[j]);
-        printf("ipb16 convert: %.10e\n", ipb16_c_d);
+        printf("ipb16 convert: %.17e\n", ipb16_c_d);
         
         printf("read radius:\nr32 = ");
         p32_print_binary(p32_r_tilde[j]);
@@ -222,7 +231,7 @@ int main(int argc, char **argv)
         perror("Error opening file: convert time");
         return 1;
     }
-    fprintf(fp, "%.10e\t%.10e\t%.10e\t%.10e\t(ms)\n",
+    fprintf(fp, "%.17e\t%.17e\t%.17e\t%.17e\t(ms)\n",
             end1 - start1, end2 - start2, end3 - start3, end4 - start4);
 
     fclose(fp);
@@ -230,13 +239,25 @@ int main(int argc, char **argv)
     FILE *fp2 = fopen("posit_ipb.txt", "a");
     if (fp2 == NULL)
     {
+        perror("Error opening file: ipb");
+        return 1;
+    } 
+    fprintf(fp2, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n",
+            ipb_8_avg, ipb_8_min, ipb_8_max, ipb_8_c_avg, ipb_8_c_min, ipb_8_c_max, 
+            ipb_16_avg, ipb_16_min, ipb_16_max, ipb_16_c_avg, ipb_16_c_min, ipb_16_c_max);
+    fclose(fp2);
+
+    FILE *fp3 = fopen("posit_ipb_rate.txt", "a");
+    if (fp3 == NULL)
+    {
         perror("Error opening file: ipb rate");
         return 1;
     } 
-    fprintf(fp2, "%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\n",
-            ipb_8_avg, ipb_8_min, ipb_8_max, ipb_8_c_avg, ipb_8_c_min, ipb_8_c_max, ipb_16_avg, ipb_16_min, ipb_16_max, ipb_16_c_avg, ipb_16_c_min, ipb_16_c_max);
-
-
+    fprintf(fp3, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n",
+        avg_rate8, min_rate8, max_rate8, 
+        avg_rate16, max_rate16, min_rate16);
+    fclose(fp3);
+    
     free(test_int8);
     free(test_int16);
     free(p8_c);

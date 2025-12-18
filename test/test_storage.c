@@ -9,12 +9,34 @@
 
 #define N 20000
 
+#define N_BITS 128
+
+int n_bits_u32(int precision)
+{
+    return (precision <= 20) ? 33 : 65;
+}
+
+int n_bits_fd(int precision)
+{
+    return (precision <= 23) ? 33 : 65;
+}
+
+int n_bits_mixed(int precision)
+{
+    return int_max(20, (precision / 8 + !(precision % 8) * 1) * 8 + 4);
+}
+
+double info_per_bit(double radius, int n_bits)
+{
+    return (double) 1 / (2 * radius * n_bits);
+}
 
 int main(int argc, char ** argv)
 {
-    C_R *test_int2 = malloc(2 * N * sizeof(C_R));
+    int total = 2 * N;
+    C_R *test_int2 = malloc(total * sizeof(C_R));
 
-    int n_mask = (2 * N + 7) >> 3; // ceil(2 * N / 8)
+    int n_mask = (total + 7) >> 3; // ceil(total / 8)
     uint8_t *mask = malloc(n_mask * sizeof(uint8_t));
     int count_1 = 0;
 
@@ -24,13 +46,13 @@ int main(int argc, char ** argv)
     uint8_t *mask3 = malloc(N * sizeof(uint8_t));
     int n_double = 0, count_u32 = 0, count_u16 = 0, count_u8 = 0;
 
-    FP_INT_PREC *cp_fp = malloc(2 * N * sizeof(FP_INT_PREC));
-    double *val1 = malloc(2 * N * sizeof(double)); 
-    double *val2 = malloc(2 * N * sizeof(double));
-    double *val3 = malloc(2 * N * sizeof(double));
+    FP_INT_PREC *cp_fp = malloc(total * sizeof(FP_INT_PREC));
+    double *val1 = malloc(total * sizeof(double)); 
+    double *val2 = malloc(total * sizeof(double));
+    double *val3 = malloc(total * sizeof(double));
 
-    FP_INT_PREC *cp_mpfr = malloc(2 * N * sizeof(FP_INT_PREC));
-    mpfr_t *mpfr_c = malloc(2 * N * sizeof(mpfr_t));
+    FP_INT_PREC *cp_mpfr = malloc(total * sizeof(FP_INT_PREC));
+    mpfr_t *mpfr_c = malloc(total * sizeof(mpfr_t));
 
     const double c_exp_min = -6.0;
     const double c_exp_max = 9.0;
@@ -58,7 +80,7 @@ int main(int argc, char ** argv)
 
     // double to mpfr_t converssion
     double start1 = get_time_ms();
-    for (int i = 0; i < 2 * N; i ++)
+    for (int i = 0; i < total; i ++)
     {
         cp_mpfr[i] = CR_FP_mpfr(test_int2[i]);
         mpfr_init2(mpfr_c[i], cp_mpfr[i].precision);
@@ -66,13 +88,81 @@ int main(int argc, char ** argv)
     }
     double end1 = get_time_ms();
 
-    // double converssion
+    // double fp-int conversion
     double start2 = get_time_ms();
-    for (int i = 0; i < 2 * N; i ++)
+    for (int i = 0; i < total; i ++)
     {
         cp_fp[i] = CR_FP_p(test_int2[i]);
     }
     double end2 = get_time_ms();
+
+
+    // information per bit (before and after fp-int conversion + improved storage, and rate)
+    double max_ipb_i = 0.0, min_ipb_i = INFINITY, mean_ipb_i = 0.0;
+
+    double max_ipb_u32 = 0.0, min_ipb_u32 = INFINITY, mean_ipb_u32 = 0.0;
+    double max_ipb_fd = 0.0, min_ipb_fd = INFINITY, mean_ipb_fd = 0.0;
+    double max_ipb_mixed = 0.0, min_ipb_mixed = INFINITY, mean_ipb_mixed = 0.0;
+
+    double max_rate_u32 = 0.0, mean_rate_u32 = 0.0, min_rate_u32 = INFINITY, 
+        max_rate_fd = 0.0, mean_rate_fd = 0.0, min_rate_fd = INFINITY,
+        max_rate_mixed = 0.0, mean_rate_mixed = 0.0, min_rate_mixed = INFINITY;
+
+    int n_bits_i = N_BITS;
+
+    for (int i = 0; i < total; i ++)
+    {
+        double ipb_i = info_per_bit(test_int2[i].radius, n_bits_i);
+        C_R new = FP_CR3(cp_fp[i].center);
+
+        int n_u32 = n_bits_u32(cp_fp[i].precision);
+        int n_fd = n_bits_fd(cp_fp[i].precision);
+        int n_mixed = n_bits_mixed(cp_fp[i].precision);
+
+        double ipb_u32 = info_per_bit(new.radius, n_u32);
+        double ipb_fd = info_per_bit(new.radius, n_fd);
+        double ipb_mixed = info_per_bit(new.radius, n_mixed);
+
+        double rate_u32 = ipb_u32 / ipb_i;
+        double rate_fd = ipb_fd / ipb_i;
+        double rate_mixed = ipb_mixed / ipb_i;
+
+        mean_ipb_i += ipb_i;
+        mean_ipb_u32 += ipb_u32;
+        mean_ipb_fd += ipb_fd;
+        mean_ipb_mixed += ipb_mixed;
+
+        max_ipb_i = fmax(max_ipb_i, ipb_i);
+        max_ipb_u32 = fmax(max_ipb_u32, ipb_u32);
+        max_ipb_fd = fmax(max_ipb_fd, ipb_fd);
+        max_ipb_mixed = fmax(max_ipb_mixed, ipb_mixed);
+
+        min_ipb_i = fmin(min_ipb_i, ipb_i);
+        min_ipb_u32 = fmin(min_ipb_u32, ipb_u32);
+        min_ipb_fd = fmin(min_ipb_fd, ipb_fd);
+        min_ipb_mixed = fmin(min_ipb_mixed, ipb_mixed);
+
+        mean_rate_u32 += rate_u32;
+        mean_rate_fd += rate_fd;
+        mean_rate_mixed += rate_mixed;
+
+        max_rate_u32 = fmax(max_rate_u32, rate_u32);
+        max_rate_fd = fmax(max_rate_fd, rate_fd);
+        max_rate_mixed = fmax(max_rate_mixed, rate_mixed);
+
+        min_rate_u32 = fmin(min_rate_u32, rate_u32);
+        min_rate_fd = fmin(min_rate_fd, rate_fd);
+        min_rate_mixed = fmin(min_rate_mixed, rate_mixed);
+    }
+    mean_ipb_i /= total;
+    mean_ipb_u32 /= total;
+    mean_ipb_fd /= total;
+    mean_ipb_mixed /= total;
+
+    mean_rate_u32 /= total;
+    mean_rate_fd /= total;
+    mean_rate_mixed /= total;
+
 
     // set mask bits: 1 if precision <= 20, 0 otherwise
     double mask1start = get_time_ms();
@@ -82,7 +172,7 @@ int main(int argc, char ** argv)
         for (int j = 0; j < 8; j ++)
         {
             int idx = i * 8 + j;
-            if (idx >= 2 * N) break;
+            if (idx >= total) break;
 
             if (cp_fp[i * 8 + j].precision <= 20)
             {
@@ -100,7 +190,7 @@ int main(int argc, char ** argv)
         for (int j = 0; j < 8; j ++)
         {
             int idx = i * 8 + j;
-            if (idx >= 2 * N) break;
+            if (idx >= total) break;
 
             if (cp_fp[i * 8 + j].precision <= 23)
             {
@@ -128,7 +218,7 @@ int main(int argc, char ** argv)
         for (int j = 0; j < 8; j ++) 
         {
             int idx = i * 8 + j;
-            if (idx >= 2 * N) break;
+            if (idx >= total) break;
             count_1 += (mask[i] >> j) & 1;
             count_2 += (mask2[i] >> j) & 1;
         }
@@ -153,7 +243,7 @@ int main(int argc, char ** argv)
     uint32_t *res32 = malloc(n_32 * sizeof(uint32_t));
 
     struct D_F res1;
-    res1.d = malloc((2 * N - count_2) * sizeof(double));
+    res1.d = malloc((total - count_2) * sizeof(double));
     res1.f = malloc(count_2 * sizeof(float));
 
     struct MP res_mp;
@@ -171,7 +261,7 @@ int main(int argc, char ** argv)
         for (int j = 7; j >= 0; j --) 
         {
             int idx = i * 8 + j;
-            if (idx >= 2 * N) continue;
+            if (idx >= total) continue;
 
             cast dc;
             dc.d = cp_fp[idx].center;
@@ -199,7 +289,7 @@ int main(int argc, char ** argv)
         for (int j = 7; j >= 0; j --) 
         {
             int idx = i * 8 + j;
-            if (idx >= 2 * N) continue;
+            if (idx >= total) continue;
 
             if ((mask2[i] >> j) & 1) 
             {
@@ -316,7 +406,7 @@ int main(int argc, char ** argv)
         for (int j = 7; j >= 0; j --) 
         {
             int idx = i * 8 + j;
-            if (idx >= 2 * N) continue;
+            if (idx >= total) continue;
 
             uint64_t high = (uint64_t)res32[k ++] << 32;
             uint64_t low = 0;
@@ -347,7 +437,7 @@ int main(int argc, char ** argv)
         for (int j = 7; j >= 0; j --) 
         {
             int idx = i * 8 + j;
-            if (idx >= 2 * N) continue;
+            if (idx >= total) continue;
 
             if ((mask2[i] >> j) & 1) 
             {
@@ -448,39 +538,56 @@ int main(int argc, char ** argv)
     double end4c = get_time_ms();
 
 
-    // mpfr, fp_int, 32bits, float, multiprecision, mask1, maks2, mask3
+    // time
     FILE *fp = fopen("compression_time.txt", "a");
-    fprintf(fp, "%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\t%.10e\tms\n", end1 - start1, end2 - start2, end3 - start3, end4 - start4, 
+    fprintf(fp, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", 
+            end1 - start1, end2 - start2, end3 - start3, end4 - start4, 
             end3b - start3b, end4b - start4b, 
             end3c - start3c, end4c - start4c, 
             mask1end - mask1start, mask2end - mask2start, mask3end - mask3start);
     fclose(fp);
 
-    for (int i = 0; i < 2 * N; i ++)
+    // information per bit
+    FILE *fp2 = fopen("compression_ipb.txt", "a");
+    fprintf(fp2, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", 
+        mean_ipb_i, min_ipb_i, max_ipb_i, 
+        mean_ipb_u32, min_ipb_u32,max_ipb_u32, 
+        mean_ipb_fd, min_ipb_fd, max_ipb_fd, 
+        mean_ipb_mixed, min_ipb_mixed, max_ipb_mixed);
+    fclose(fp2);
+
+    FILE *fp3 = fopen("compression_ipb_rate.txt", "a");
+    fprintf(fp3, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", 
+        mean_rate_u32, min_rate_u32, max_rate_u32, 
+        mean_rate_fd, min_rate_fd, max_rate_fd, 
+        mean_rate_mixed, min_rate_mixed, max_rate_mixed);
+    fclose(fp3);
+
+    for (int i = 0; i < total; i ++)
     {
         if (fabs(val1[i] - cp_fp[i].center) > 1e-10)  
         {
             printf("Error: %d\n", i);
-            printf("Original: %.10e\n", cp_fp[i].center);
-            printf("Recovered1: %.10e\n", val1[i]);
+            printf("Original: %.17e\n", cp_fp[i].center);
+            printf("Recovered1: %.17e\n", val1[i]);
         }
         if (fabs(val2[i] - cp_fp[i].center) > 1e-10)
         {
             printf("Error: %d\n", i);
-            printf("Original: %.10e\n", cp_fp[i].center);
-            printf("Recovered2: %.10e\n", val2[i]);
+            printf("Original: %.17e\n", cp_fp[i].center);
+            printf("Recovered2: %.17e\n", val2[i]);
         }
         if (fabs(val3[i] - cp_fp[i].center) > 1e-10)
         {
             printf("Error: %d\n", i);
-            printf("Original: %.10e\n", cp_fp[i].center);
-            printf("Recovered3: %.10e\n", val3[i]);
+            printf("Original: %.17e\n", cp_fp[i].center);
+            printf("Recovered3: %.17e\n", val3[i]);
         }
     }
 
     printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\n", n_mask, count_1, count_2, n_double, count_u32, count_u16, count_u8);
 
-    for (int i = 0; i < 2 * N; i ++)
+    for (int i = 0; i < total; i ++)
     {
         mpfr_clear(mpfr_c[i]);
     }
