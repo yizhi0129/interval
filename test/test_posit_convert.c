@@ -255,7 +255,7 @@ int main(int argc, char **argv)
     } 
     fprintf(fp3, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n",
         avg_rate8, min_rate8, max_rate8, 
-        avg_rate16, max_rate16, min_rate16);
+        avg_rate16, min_rate16, max_rate16);
     fclose(fp3);
     
     free(test_int8);

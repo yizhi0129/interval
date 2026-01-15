@@ -63,7 +63,7 @@ MPFR_C_R read_mpfr_uls3(mpfr_t c_tilde)
     mpfr_prec_t prec = mpfr_get_prec(c_tilde);
     mpfr_exp_t e_c = mpfr_get_exp(c_tilde);
     mpfr_init2(int_cr.center, prec);
-    mpfr_init2(int_cr.radius, 1);
+    mpfr_init2(int_cr.radius, 2);
 
     mpfr_set(int_cr.center, c_tilde, MPFR_RNDN);
     mpfr_set_ui_2exp(int_cr.radius, 1, e_c - prec, MPFR_RNDN);
