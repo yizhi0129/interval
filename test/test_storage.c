@@ -9,7 +9,6 @@
 
 #define N 20000
 
-#define N_BITS 128
 
 int n_bits_u32(int precision)
 {
@@ -23,12 +22,12 @@ int n_bits_fd(int precision)
 
 int n_bits_mixed(int precision)
 {
-    return int_max(20, (precision / 8 + !(precision % 8) * 1) * 8 + 4);
+    return int_max(20, ((precision + 7 )/ 8) * 8 + 4);
 }
 
 double info_per_bit(double radius, int n_bits)
 {
-    return (double) 1 / (2 * radius * n_bits);
+    return 0.5 / (radius * n_bits);
 }
 
 int main(int argc, char ** argv)
@@ -108,7 +107,7 @@ int main(int argc, char ** argv)
         max_rate_fd = 0.0, mean_rate_fd = 0.0, min_rate_fd = INFINITY,
         max_rate_mixed = 0.0, mean_rate_mixed = 0.0, min_rate_mixed = INFINITY;
 
-    int n_bits_i = N_BITS;
+    int n_bits_i = 128;
 
     for (int i = 0; i < total; i ++)
     {

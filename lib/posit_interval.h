@@ -6,8 +6,8 @@
 
 #include "softposit.h"
 
-#define CONST_IPB_8 set_pow2(-32)
-#define CONST_IPB_16 set_pow2(-64)
+#define CONST_IPB_8 1.0 / (2 * 2 * 8)
+#define CONST_IPB_16 1.0 / (2 * 2 * 16)
 
 #define MAXPOS8 0x7F
 #define MAXPOS16 0x7FFF

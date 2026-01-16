@@ -128,7 +128,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < total; i ++)
     {
         mpfr_d_div(temp1, factor_d, test_int[i].radius, MPFR_RNDN);
-        int n_bits = 1 + 64 + ((p[i] / 64) + !(p[i] % 64) * 1) * 64;
+        int n_bits = 1 + 64 + ((p[i] + 63) / 64) * 64;
         mpfr_d_div(temp2, 0.5, res_int[i].radius, MPFR_RNDN);
         mpfr_div_d(temp2, temp2, (double) n_bits, MPFR_RNDN);
         mpfr_div(temp3, temp2, temp1, MPFR_RNDN);
@@ -142,8 +142,8 @@ int main(int argc, char **argv)
         mpfr_min(min_rate, min_rate, temp3, MPFR_RNDN);
 
         mpfr_add(avg_ipb, avg_ipb, temp1, MPFR_RNDN);
-        mpfr_max(avg_ipb2, avg_ipb2, temp2, MPFR_RNDN);
-        mpfr_max(avg_rate, avg_rate, temp3, MPFR_RNDN);
+        mpfr_add(avg_ipb2, avg_ipb2, temp2, MPFR_RNDN);
+        mpfr_add(avg_rate, avg_rate, temp3, MPFR_RNDN);
 
         mpfr_clear(array[i]);
         mpfr_clear(test_int[i].center);
