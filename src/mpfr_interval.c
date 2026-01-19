@@ -142,6 +142,11 @@ void interval_GS_tridiag_mpfi(mpfi_t *A, mpfi_t *b, mpfi_t *x, int n)
             mpfi_div(x[i], sum, A[i]);
 
             mpfi_intersect(x[i], x[i], x_prev[i]);
+            if (mpfi_is_empty(x[i])) 
+            {
+                mpfi_set(x[i], x_prev[i]); // fallback
+                printf("Empty Intersection!\n");
+            }
         }
 
         int converged = check_convergence(x, x_prev, n, TOLERANCE);   
@@ -227,7 +232,7 @@ void interval_GS_CSR_mpfi(mpfi_t *A, int *idx, int *col_id, mpfi_t *b, mpfi_t *x
                 {
                     mpfi_t prod;
                     mpfi_init2(prod, mpfi_get_prec(A[k]));
-                    mpfi_mul(prod, A[k], x_prev[j]);
+                    mpfi_mul(prod, A[k], x[j]);
                     mpfi_sub(sum, sum, prod);
                     mpfi_clear(prod);
                 }
@@ -249,6 +254,12 @@ void interval_GS_CSR_mpfi(mpfi_t *A, int *idx, int *col_id, mpfi_t *b, mpfi_t *x
             // Inverse of A_ii
             mpfi_div(x[i], sum, A_ii[i]);
             mpfi_intersect(x[i], x[i], x_prev[i]);
+
+            if (mpfi_is_empty(x[i])) 
+            {
+                mpfi_set(x[i], x_prev[i]); // fallback
+                printf("Empty Intersection!\n");
+            }
 
             mpfi_clear(sum);
         }

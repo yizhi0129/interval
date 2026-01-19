@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <stdbool.h>
+#include <fenv.h>
 
 #include "convert.h"
 #include "functions.h"
@@ -201,6 +202,8 @@ int main(int argc, char** argv)
     char time[64];
     char matrix[64];
     char res[64];
+    char rate_A[64];
+    char rate_x[64];
 
     switch (precision) 
     {
@@ -227,10 +230,10 @@ int main(int argc, char** argv)
             // initialize x
             for (int i = 0; i < n; i ++)
             {
-                x1[i].center = 0.7;
-                x1[i].radius = 0.7;
-                x2[i].center = 0.7;
-                x2[i].radius = 0.7;
+                x1[i].center = 0.9;
+                x1[i].radius = 0.9;
+                x2[i].center = 0.9;
+                x2[i].radius = 0.9;
             }
             //printf("initialized x\n");
 
@@ -484,6 +487,25 @@ int main(int argc, char** argv)
             double end_GS = get_time_ms();
             //printf("GS done\n");
 
+            // check inclusion inf(x2) <= inf(x1), sup(x1) <= sup(x2)
+            fesetround(FE_UPWARD);
+            for (int i = 0; i < n; i ++)
+            {
+                if (x1[i].center + x1[i].radius > x2[i].center + x2[i].radius)
+                {
+                    fprintf(stderr, "Sup[%d] not included!\n", i);
+                }
+            }
+            fesetround(FE_DOWNWARD);
+            for (int i = 0; i < n; i ++)
+            {
+                if (x1[i].center - x1[i].radius < x2[i].center - x2[i].radius)
+                {
+                    fprintf(stderr, "Inf[%d] not included!\n", i);
+                }
+            }
+            fesetround(FE_TONEAREST);
+
             // Write accuracy to file
             FILE *fp_res = fopen(res, "a");
             double bias = 0.0, dilat = 0.0, dilat2 = 0.0;
@@ -580,10 +602,10 @@ int main(int argc, char** argv)
             // initialize x
             for (int i = 0; i < n; i ++)
             {
-                x1[i].center = 0.7;
-                x1[i].radius = 0.7;
-                x2[i].center = 0.7;
-                x2[i].radius = 0.7;
+                x1[i].center = 0.9;
+                x1[i].radius = 0.9;
+                x2[i].center = 0.9;
+                x2[i].radius = 0.9;
             }
             //printf("initialized x\n");
 
@@ -785,6 +807,25 @@ int main(int argc, char** argv)
             double end_GS = get_time_ms();
             //printf("GS done\n");
 
+            // check inclusion inf(x2) <= inf(x1), sup(x1) <= sup(x2)
+            fesetround(FE_UPWARD);
+            for (int i = 0; i < n; i ++)
+            {
+                if (x1[i].center + x1[i].radius > x2[i].center + x2[i].radius)
+                {
+                    fprintf(stderr, "Sup[%d] not included!\n", i);
+                }
+            }
+            fesetround(FE_DOWNWARD);
+            for (int i = 0; i < n; i ++)
+            {
+                if (x1[i].center - x1[i].radius < x2[i].center - x2[i].radius)
+                {
+                    fprintf(stderr, "Inf[%d] not included!\n", i);
+                }
+            }
+            fesetround(FE_TONEAREST);
+
             // Write results to file
             FILE *fp_res = fopen(res, "a");
             double bias = 0.0, dilat = 0.0, dilat2 = 0.0;
@@ -877,10 +918,10 @@ int main(int argc, char** argv)
             // initialize x
             for (int i = 0; i < n; i ++)
             {
-                x1[i].center = 0.7;
-                x1[i].radius = 0.7;
-                x2[i].center = 0.7;
-                x2[i].radius = 0.7;
+                x1[i].center = 0.9;
+                x1[i].radius = 0.9;
+                x2[i].center = 0.9;
+                x2[i].radius = 0.9;
             }
 
             // GS ref
@@ -1068,6 +1109,25 @@ int main(int argc, char** argv)
             double end_GS = get_time_ms();
             //printf("GS done\n");
 
+            // check inclusion inf(x2) <= inf(x1), sup(x1) <= sup(x2)
+            fesetround(FE_UPWARD);
+            for (int i = 0; i < n; i ++)
+            {
+                if (x1[i].center + x1[i].radius > x2[i].center + x2[i].radius)
+                {
+                    fprintf(stderr, "Sup[%d] not included!\n", i);
+                }
+            }
+            fesetround(FE_DOWNWARD);
+            for (int i = 0; i < n; i ++)
+            {
+                if (x1[i].center - x1[i].radius < x2[i].center - x2[i].radius)
+                {
+                    fprintf(stderr, "Inf[%d] not included!\n", i);
+                }
+            }
+            fesetround(FE_TONEAREST);
+
             // Write accuracy to file
             FILE *fp_res = fopen(res, "a");
             double bias = 0.0, dilat = 0.0, dilat2 = 0.0;
@@ -1132,7 +1192,8 @@ int main(int argc, char** argv)
             sprintf(time, "GS_csr_mpfi_time_%d_%d.txt", n, precision);
             sprintf(matrix, "GS_csr_mpfi_matrix_%d_%d.txt", n, precision);
             sprintf(res, "GS_csr_mpfi_res_%d_%d.txt", n, precision);
-
+            sprintf(rate_A, "GS_csr_mpfi_A_%d_%d.txt", n, precision);
+            sprintf(rate_x, "GS_csr_mpfi_x_%d_%d.txt", n, precision);
 
             MPFR_C_R *A = NULL;
             int *idx1 = malloc((n + 1) * sizeof(int));
@@ -1179,9 +1240,9 @@ int main(int argc, char** argv)
                 mpfi_init2(b_mpfi[i], precision);
                 cr_lr(&b[i], b_mpfi[i]);
                 mpfi_init2(x_mpfi[i], precision);
-                mpfi_interv_d(x_mpfi[i], 0.0, 1.4); // Initialize x to [0, 1.4]
+                mpfi_interv_d(x_mpfi[i], 0.0, 1.8); // Initialize x to [0, 1.4]
                 mpfi_init2(x_mpfi2[i], precision);
-                mpfi_interv_d(x_mpfi2[i], 0.0, 1.4); // Initialize x2 to [0, 1.4]
+                mpfi_interv_d(x_mpfi2[i], 0.0, 1.8); // Initialize x2 to [0, 1.4]
             }
 
             // GS ref
@@ -1312,6 +1373,15 @@ int main(int argc, char** argv)
             double end_GS = get_time_ms();
             //printf("GS done\n");
 
+            // check inclusion
+            for (int i = 0; i < n; i ++)
+            {
+                if (!mpfi_is_inside(x_mpfi[i], x_mpfi2[i]))
+                {
+                    fprintf(stderr, "[%d] Not included!\n", i);
+                }
+            }
+
             // accuracy check
             for (int i = 0; i < n; i ++)
             {
@@ -1320,6 +1390,8 @@ int main(int argc, char** argv)
             }
 
             FILE *fp_res = fopen(res, "a");
+            FILE *fp_A = fopen(rate_A, "w");
+            FILE *fp_x = fopen(rate_x, "w");
             mpfr_t bias, dilat, dilat2, max_bias, max_dilat, max_dilat2, temp1, temp2, temp3, temp3b;
             mpfr_inits2(precision, bias, dilat, dilat2, max_bias, max_dilat, max_dilat2, temp1, temp2, temp3, temp3b, NULL);
             mpfr_set_d(bias, 0.0, MPFR_RNDN);
@@ -1341,6 +1413,10 @@ int main(int argc, char** argv)
                 mpfr_div(temp2, x2[i].radius, x1[i].radius, MPFR_RNDN);
                 mpfr_abs(temp2, temp2, MPFR_RNDN);
 
+                fprintf(fp_x, "%d\t", i);
+                mpfr_out_str(fp_x, 10, 17, temp2, MPFR_RNDN); 
+                fputc('\n', fp_x);
+
                 mpfr_div(temp3, x2[i].radius, x2[i].center, MPFR_RNDN);
                 mpfr_div(temp3b, x1[i].radius, x1[i].center, MPFR_RNDN);
                 mpfr_div(temp3, temp3, temp3b, MPFR_RNDN);
@@ -1354,7 +1430,29 @@ int main(int argc, char** argv)
                 mpfr_add(dilat, dilat, temp2, MPFR_RNDN);
                 mpfr_add(dilat2, dilat2, temp3, MPFR_RNDN);
             }
+
+            int row = 0;
+            for (int i = 0; i < nnz_read; i ++)
+            {
+                while (i >= idx2[row + 1]) 
+                {
+                    row ++;
+                }
+
+                mpfr_sub(temp1, &A_mpfi2[i]->right, &A_mpfi2[i]->left, MPFR_RNDU);
+                mpfr_div_d(temp1, temp1, 2.0, MPFR_RNDU);
+                mpfr_div(temp2, temp1, A[i].radius, MPFR_RNDN);
+                mpfr_abs(temp2, temp2, MPFR_RNDN);
+
+                fprintf(fp_A, "%d\t", row + 1);
+                fprintf(fp_A, "%d\t", col_id2[i] + 1);
+                mpfr_out_str(fp_A, 10, 17, temp2, MPFR_RNDN); 
+                fputc('\n', fp_A);
+            }
+
             mpfr_clears(temp1, temp2, temp3, temp3b, NULL);
+            fclose(fp_A);
+            fclose(fp_x);
 
             mpfr_div_ui(bias, bias, n_read, MPFR_RNDN);
             mpfr_div_ui(dilat, dilat, n_read, MPFR_RNDN);
