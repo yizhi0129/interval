@@ -9,6 +9,7 @@
 #include "functions.h"
 #include "mpfr_interval.h"
 
+#define MAX_BIAS 1e+300
 
 void generate_rhs_ieee(C_R *b, int n)
 {
@@ -88,7 +89,7 @@ void generate_rhs_mpfr(MPFR_C_R *b, int n, int precision)
     mpfr_inits2(prec, rand, r_power, r_range, r_val, abs_c, c_val, NULL);
     mpfr_set_d(r_range, r_exp_range, MPFR_RNDN);
 
-    // diagonal and right-hand side
+    // right-hand side
     for (int i = 0; i < n; i ++) 
     {
         mpfr_inits2(prec, b[i].center, b[i].radius, NULL);
@@ -509,7 +510,7 @@ int main(int argc, char** argv)
             // Write accuracy to file
             FILE *fp_res = fopen(res, "a");
             double bias = 0.0, dilat = 0.0, dilat2 = 0.0;
-            double max_bias = 0.0, max_dilat = 0.0, max_dilat2 = 0.0;
+            double min_bias = MAX_BIAS, max_bias = 0.0, max_dilat = 0.0, max_dilat2 = 0.0;
             for (int i = 0; i < n_read; i ++)
             {
                 double temp1 = fabs((x2[i].center - x1[i].center) / x1[i].center);
@@ -518,6 +519,7 @@ int main(int argc, char** argv)
                 bias += temp1;
                 dilat += temp2;
                 dilat2 += temp3;
+                min_bias = fmin(min_bias, temp1);
                 max_bias = fmax(max_bias, temp1);
                 max_dilat = fmax(max_dilat, temp2);
                 max_dilat2 = fmax(max_dilat2, temp3);
@@ -525,7 +527,7 @@ int main(int argc, char** argv)
             bias /= n_read;
             dilat /= n_read;
             dilat2 /= n_read;
-            fprintf(fp_res, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", bias, max_bias, dilat, max_dilat, dilat2, max_dilat2);
+            fprintf(fp_res, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", min_bias, bias, max_bias, dilat, max_dilat, dilat2, max_dilat2);
             fclose(fp_res);
 
             // Write timing information to file
@@ -829,7 +831,7 @@ int main(int argc, char** argv)
             // Write results to file
             FILE *fp_res = fopen(res, "a");
             double bias = 0.0, dilat = 0.0, dilat2 = 0.0;
-            double max_bias = 0.0, max_dilat = 0.0, max_dilat2 = 0.0;
+            double min_bias = MAX_BIAS, max_bias = 0.0, max_dilat = 0.0, max_dilat2 = 0.0;
             for (int i = 0; i < n_read; i ++)
             {
                 double temp1 = fabs((x2[i].center - x1[i].center) / x1[i].center);
@@ -838,6 +840,7 @@ int main(int argc, char** argv)
                 bias += temp1;
                 dilat += temp2;
                 dilat2 += temp2;
+                min_bias = fmin(min_bias, temp1);
                 max_bias = fmax(max_bias, temp1);
                 max_dilat = fmax(max_dilat, temp2);
                 max_dilat2 = fmax(max_dilat2, temp3);
@@ -845,7 +848,7 @@ int main(int argc, char** argv)
             bias /= n_read;
             dilat /= n_read;
             dilat2 /= n_read;
-            fprintf(fp_res, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", bias, max_bias, dilat, max_dilat, dilat2, max_dilat2);
+            fprintf(fp_res, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", min_bias, bias, max_bias, dilat, max_dilat, dilat2, max_dilat2);
             fclose(fp_res);
 
             // Write timing information to file
@@ -1131,7 +1134,7 @@ int main(int argc, char** argv)
             // Write accuracy to file
             FILE *fp_res = fopen(res, "a");
             double bias = 0.0, dilat = 0.0, dilat2 = 0.0;
-            double max_bias = 0.0, max_dilat = 0.0, max_dilat2 = 0.0;
+            double min_bias = MAX_BIAS, max_bias = 0.0, max_dilat = 0.0, max_dilat2 = 0.0;
             for (int i = 0; i < n_read; i ++)
             {
                 double temp1 = fabs((x2[i].center - x1[i].center) / x1[i].center);
@@ -1140,6 +1143,7 @@ int main(int argc, char** argv)
                 bias += temp1;
                 dilat += temp2;
                 dilat2 += temp3;
+                min_bias = fmin(min_bias, temp1);
                 max_bias = fmax(max_bias, temp1);
                 max_dilat = fmax(max_dilat, temp2);
                 max_dilat2 = fmax(max_dilat2, temp3);
@@ -1147,7 +1151,7 @@ int main(int argc, char** argv)
             bias /= n_read;
             dilat /= n_read;
             dilat2 /= n_read;
-            fprintf(fp_res, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", bias, max_bias, dilat, max_dilat, dilat2, max_dilat2);
+            fprintf(fp_res, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", min_bias, bias, max_bias, dilat, max_dilat, dilat2, max_dilat2);
             fclose(fp_res);
 
             // Write timing information to file
@@ -1240,9 +1244,9 @@ int main(int argc, char** argv)
                 mpfi_init2(b_mpfi[i], precision);
                 cr_lr(&b[i], b_mpfi[i]);
                 mpfi_init2(x_mpfi[i], precision);
-                mpfi_interv_d(x_mpfi[i], 0.0, 1.8); // Initialize x to [0, 1.4]
+                mpfi_interv_d(x_mpfi[i], 0.0, 1.8); // Initialize x to [0, 1.8]
                 mpfi_init2(x_mpfi2[i], precision);
-                mpfi_interv_d(x_mpfi2[i], 0.0, 1.8); // Initialize x2 to [0, 1.4]
+                mpfi_interv_d(x_mpfi2[i], 0.0, 1.8); // Initialize x2 to [0, 1.8]
             }
 
             // GS ref
@@ -1392,11 +1396,12 @@ int main(int argc, char** argv)
             FILE *fp_res = fopen(res, "a");
             FILE *fp_A = fopen(rate_A, "w");
             FILE *fp_x = fopen(rate_x, "w");
-            mpfr_t bias, dilat, dilat2, max_bias, max_dilat, max_dilat2, temp1, temp2, temp3, temp3b;
-            mpfr_inits2(precision, bias, dilat, dilat2, max_bias, max_dilat, max_dilat2, temp1, temp2, temp3, temp3b, NULL);
+            mpfr_t bias, dilat, dilat2, min_bias, max_bias, max_dilat, max_dilat2, temp1, temp2, temp3, temp3b;
+            mpfr_inits2(precision, bias, dilat, dilat2, min_bias, max_bias, max_dilat, max_dilat2, temp1, temp2, temp3, temp3b, NULL);
             mpfr_set_d(bias, 0.0, MPFR_RNDN);
             mpfr_set_d(dilat, 0.0, MPFR_RNDN);
             mpfr_set_d(dilat2, 0.0, MPFR_RNDN);
+            mpfr_set_d(min_bias, MAX_BIAS, MPFR_RNDN);
             mpfr_set_d(max_bias, 0.0, MPFR_RNDN);
             mpfr_set_d(max_dilat, 0.0, MPFR_RNDN);
             mpfr_set_d(max_dilat2, 0.0, MPFR_RNDN);
@@ -1422,6 +1427,7 @@ int main(int argc, char** argv)
                 mpfr_div(temp3, temp3, temp3b, MPFR_RNDN);
                 mpfr_abs(temp3, temp3, MPFR_RNDN);
 
+                mpfr_min(min_bias, min_bias, temp1, MPFR_RNDN);
                 mpfr_max(max_bias, max_bias, temp1, MPFR_RNDN);
                 mpfr_max(max_dilat, max_dilat, temp2, MPFR_RNDN);
                 mpfr_max(max_dilat2, max_dilat2, temp3, MPFR_RNDN);
@@ -1458,6 +1464,8 @@ int main(int argc, char** argv)
             mpfr_div_ui(dilat, dilat, n_read, MPFR_RNDN);
             mpfr_div_ui(dilat2, dilat2, n_read, MPFR_RNDN);
 
+            mpfr_out_str(fp_res, 10, 17, min_bias, MPFR_RNDN); 
+            fputc('\t', fp_res);
             mpfr_out_str(fp_res, 10, 17, bias, MPFR_RNDN); 
             fputc('\t', fp_res);
             mpfr_out_str(fp_res, 10, 17, max_bias, MPFR_RNDN);

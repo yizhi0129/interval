@@ -194,6 +194,8 @@ int main(int argc, char **argv)
     double r1_min = MAX_RATE;
 
     double b1_max = 0.0;
+    double b1_avg = 0.0;
+    double b1_min = MAX_RATE;
 
     //double dil_max = 0.0, dil_mean = 0.0;
 
@@ -248,17 +250,20 @@ int main(int argc, char **argv)
         r1_min = fmin(r1_min, r1_rate);
 
         b1_max = fmax(b1, b1_max);
+        b1_min = fmin(b1, b1_min);
+        b1_avg += b1;
 
         //dil_max = fmax(dil, dil_max);
         //dil_mean += dil;
     }
     //dil_mean /= N;
+    b1_avg /= N;
 
     //fclose(d1);
     fclose(freq1);
     
 
-    fprintf(result1, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", e1_max, e1_min, r1_max, r1_min, b1_max);
+    fprintf(result1, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", e1_max, e1_min, r1_max, r1_min, b1_max, b1_avg, b1_min);
 
     fclose(result1); 
     fclose(f);
@@ -337,6 +342,8 @@ int main(int argc, char **argv)
     double r2_min = MAX_RATE;
 
     double b2_max = 0.0;
+    double b2_avg = 0.0;
+    double b2_min = MAX_RATE; 
 
     FILE *f2 = fopen("err2.txt", "a");
     FILE *freq2 = fopen("freq2.txt", "a");
@@ -387,13 +394,15 @@ int main(int argc, char **argv)
         r2_min = fmin(r2_min, r2_rate);
 
         b2_max = fmax(b2, b2_max);
+        b2_min = fmin(b2, b2_min);
+        b2_avg += b2;
     }
 
     //fclose(d2);
     fclose(freq2);
     
 
-    fprintf(result2, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", e2_max, e2_min, r2_max, r2_min, b2_max);
+    fprintf(result2, "%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\t%.17e\n", e2_max, e2_min, r2_max, r2_min, b2_max, b2_avg, b2_min);
 
     fclose(result2);
     fclose(f2);
