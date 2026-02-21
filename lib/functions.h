@@ -20,8 +20,15 @@ C_R intersection(C_R cr_x, C_R cr_y);
 C_R newton_pr(C_R cr_x);
 C_R newton_res(C_R cr_x);
 
+C_R interval_add(C_R cr_x, C_R cr_y);
+
+C_R interval_sub(C_R cr_x, C_R cr_y);
+C_R interval_mult(C_R cr_x, C_R cr_y);
+
+
 void interval_GS_tridiag(C_R *A, C_R *b, C_R *x, int n);
 
 void interval_GS_CSR(C_R *A, int *idx, int *col_id, C_R *b, C_R *x, int n);
+void interval_GS_CSR_IS(INF_SUP *A, int *idx, int *col_id, INF_SUP *b, INF_SUP *x, int n);
 
 #endif

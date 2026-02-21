@@ -62,28 +62,20 @@ int get_sign_bit(double x);
 
 double set_sign_bit(double x, int sign);
 
+// center-radius to inf-sup
+INF_SUP CR_IS(C_R int_cr);
+
+// inf-sup to center-radius
+C_R IS_CR(INF_SUP int_is);
+
+// center-radius to FP-INT
 FP_INT CR_FP1(C_R int_cr);
-FP_INT CR_FP2(C_R int_cr);
-FP_INT CR_FP3(C_R int_cr);
-FP_INT CR_FP4(C_R int_cr);
-FP_INT CR_FP5(C_R int_cr);
-FP_INT CR_FP6(C_R int_cr);
-FP_INT CR_FP1b(C_R int_cr);
-FP_INT CR_FP1_adj(C_R int_cr);
 FP_INT CR_FP1_adjbis(C_R int_cr);
-FP_INT CR_FP1_adjter(C_R int_cr);
+
 
 FP_INT_PREC CR_FP_p(C_R int_cr);
 FP_INT_PREC CR_FP_mpfr(C_R int_cr);
 
-FP_INT IS_FP1(INF_SUP int_is);
-FP_INT IS_FP2(INF_SUP int_is);
-FP_INT IS_FP3(INF_SUP int_is);
-FP_INT IS_FP4(INF_SUP int_is);
-FP_INT IS_FP5(INF_SUP int_is);
-FP_INT IS_FP6(INF_SUP int_is);
-
-C_R FP_CR(FP_INT c_tilde);
 
 C_R FP_CR3(FP_INT c_tilde);
 

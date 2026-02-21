@@ -123,7 +123,7 @@ C_R inverse(C_R cr_x)
 	double c1 = ((-1) / (-fabs(cr_x.center) - cr_x.radius));
 	fesetround(FE_UPWARD);
 	double c2 = ((-1)/(-fabs(cr_x.center) + cr_x.radius));
-	double c = (c1 + (c2 - c1) / 2);
+	double c = (c1 + (c2 - c1) * 0.5);
 	cr_x.radius = (c - c1);
 	fesetround(FE_TONEAREST);
     int s = get_sign_bit(cr_x.center);
@@ -148,7 +148,7 @@ C_R intersection(C_R x, C_R y)
         printf("Error: intersection is empty! back to previous interval\n");
         return y;
     }
-    double center = (inf + sup) / 2;
+    double center = (inf + (sup - inf) * 0.5);
     double radius = center - inf;
     fesetround(FE_TONEAREST);   
     C_R cr = {center, radius};
@@ -273,14 +273,8 @@ void interval_GS_tridiag(C_R *A, C_R *b, C_R *x, int n)
         {
             double diff1 = fabs((x[i].center - x_prev[i].center) / x[i].center);
             double diff2 = fabs((x[i].radius - x_prev[i].radius) / x[i].radius);
-            if (diff1 > max_diff1)
-            {
-                max_diff1 = diff1;
-            }
-            if (diff2 > max_diff2)
-            {
-                max_diff2 = diff2;
-            }
+            max_diff1 = fmax(max_diff1, diff1);
+            max_diff2 = fmax(max_diff2, diff2);
         }
         //printf("%d %lf %lf\n", count, max_diff1, max_diff2);
 
@@ -330,6 +324,7 @@ void interval_GS_CSR(C_R *A, int *idx, int *col_id, C_R *b, C_R *x, int n)
                 else if (j == i)
                 {
                     Aii_inv = inverse(A[k]);
+                    //printf("A[%d][%d] inv = {%.17f, %.17f}\n", i, i, Aii_inv.center, Aii_inv.radius);
                 }
                 else if (j > i) 
                 {
@@ -348,14 +343,8 @@ void interval_GS_CSR(C_R *A, int *idx, int *col_id, C_R *b, C_R *x, int n)
         {
             double diff1 = fabs((x[i].center - x_prev[i].center) / x[i].center);
             double diff2 = fabs((x[i].radius - x_prev[i].radius) / x[i].radius);
-            if (diff1 > max_diff1)
-            {
-                max_diff1 = diff1;
-            }
-            if (diff2 > max_diff2)
-            {
-                max_diff2 = diff2;
-            }
+            max_diff1 = fmax(max_diff1, diff1);
+            max_diff2 = fmax(max_diff2, diff2);
         }
 
         if (max_diff1 < TOLERANCE && max_diff2 < TOLERANCE)
@@ -372,3 +361,7 @@ void interval_GS_CSR(C_R *A, int *idx, int *col_id, C_R *b, C_R *x, int n)
     free(x_prev);
 }
 
+void interval_GS_CSR_IS(INF_SUP *A, int *idx, int *col_id, INF_SUP *b, INF_SUP *x, int n)
+{
+    
+}

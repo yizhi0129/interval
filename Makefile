@@ -6,7 +6,7 @@ LDFLAGS3 = -lm -lmpfi -lmpfr -lgmp
 LDFLAGS4 = -lm -lopenblas -lmpfi -lmpfr -lgmp
 LDFLAGS5 = -lm -Llib -lsoftposit
 
-TARGETS = test_convert test_matprod test_newton test_mpfr_convert test_storage test_GS test_GS_CSR test_posit_convert test_posit_app test_round
+TARGETS = test_convert test_matprod test_newton test_mpfr_convert test_storage test_GS test_GS_CSR test_posit_convert test_posit_app test_round test_GS_new
 
 test_convert_SRCS = test/test_convert.c src/convert.c
 test_matprod_SRCS = test/test_matprod.c src/functions.c src/convert.c
@@ -18,6 +18,7 @@ test_GS_CSR_SRCS = test/test_GS_CSR.c src/convert.c src/functions.c src/mpfr_int
 test_posit_convert_SRCS = test/test_posit_convert.c src/posit_interval.c src/convert.c
 test_posit_app_SRCS = test/test_posit_app.c src/posit_interval.c src/convert.c
 test_round_SRCS = test/test_round.c src/posit_interval.c src/convert.c
+test_GS_new_SRCS = test/test_GS_new.c src/convert.c src/functions.c src/mpfr_interval.c
 
 test_convert_OBJS = $(test_convert_SRCS:.c=.o)
 test_matprod_OBJS = $(test_matprod_SRCS:.c=.o)
@@ -29,6 +30,7 @@ test_GS_CSR_OBJS = $(test_GS_CSR_SRCS:.c=.o)
 test_posit_convert_OBJS = $(test_posit_convert_SRCS:.c=.o)
 test_posit_app_OBJS = $(test_posit_app_SRCS:.c=.o)
 test_round_OBJS = $(test_round_SRCS:.c=.o)
+test_GS_new_OBJS = $(test_GS_new_SRCS:.c=.o)
 
 all: $(TARGETS)
 
@@ -61,6 +63,9 @@ test_posit_app: $(test_posit_app_OBJS)
 
 test_round: $(test_round_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS5)
+
+test_GS_new: $(test_GS_new_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS4)
 
 clean:
 	rm -f src/*.o test/*.o $(TARGETS)
